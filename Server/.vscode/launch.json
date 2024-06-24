@@ -1,0 +1,18 @@
+{
+    "configurations": [
+
+
+        {
+            "name": "RemoteServer",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}\\RemoteServer\\RemoteServer.csproj",
+            "launchConfigurationId": "",
+            "serverReadyAction": {
+                "action": "openExternally",
+                // "pattern": "\\bNow listening on:\\s+https?://\\S+",
+                "uriFormat": "http://localhost:6888"
+            }
+        },
+    ]
+}
