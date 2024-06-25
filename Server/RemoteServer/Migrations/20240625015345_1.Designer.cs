@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RemoteServer;
 
@@ -10,9 +11,11 @@ using RemoteServer;
 namespace RemoteServer.Migrations
 {
     [DbContext(typeof(SqliteDbContext))]
-    partial class SqliteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240625015345_1")]
+    partial class _1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -23,7 +26,7 @@ namespace RemoteServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ClientRootPath")
+                    b.Property<string>("ClientFullPath")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
@@ -36,7 +39,7 @@ namespace RemoteServer.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ServerRootPath")
+                    b.Property<string>("ServerFullPath")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
