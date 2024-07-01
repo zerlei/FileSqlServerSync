@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace RemoteServer;
+namespace RemoteServer.Models;
 
 public class SqliteDbContext : DbContext
 {
@@ -16,6 +16,7 @@ public class SqliteDbContext : DbContext
         optionsBuilder.UseSqlite(Configuration.GetConnectionString("DbPath"));
     }
 
-    public DbSet<SyncLogHead> syncLogHeads { get; set; }
-    public DbSet<SyncLogFile> syncLogFiles { get; set; }
+    public DbSet<SyncLogHead> SyncLogHeads { get; set; }
+    public DbSet<SyncLogFile> SyncLogFiles { get; set; }
+    public DbSet<SyncGitCommit> SyncGitCommits { get; set; }
 }

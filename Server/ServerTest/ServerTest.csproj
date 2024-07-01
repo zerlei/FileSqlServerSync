@@ -20,4 +20,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteServer\RemoteServer.csproj" />
+    <ProjectReference Include="..\LocalServer\LocalServer.csproj" />
+  </ItemGroup>
+
 </Project>

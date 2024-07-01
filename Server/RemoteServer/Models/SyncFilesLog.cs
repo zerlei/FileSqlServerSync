@@ -9,10 +9,10 @@ public class SyncLogHead
     public Guid Id { get; set; }
 
     /// <summary>
-    /// git commitID
+    /// git versions
     /// </summary>
     [MaxLength(50)]
-    public required string CommitID { get; set; }
+    public required string VersionsFromTag { get; set; }
 
     /// <summary>
     /// 同步时间
@@ -39,7 +39,7 @@ public class SyncLogHead
     /// <summary>
     /// 同步消息
     /// </summary>
-    public string? Message {get;set;}
+    public string? Message { get; set; }
 }
 
 public class SyncLogFile
@@ -69,4 +69,27 @@ public class SyncLogFile
     /// </summary>
     [MaxLength(500)]
     public required string RelativePath { get; set; }
+}
+
+public class SyncGitCommit
+{
+    [Key]
+    public Guid Id { get; set; }
+    public Guid HeadId { get; set; }
+    /// <summary>
+    /// git commit id
+    /// </summary>
+    public required string CommitId { get; set; }
+    /// <summary>
+    /// git commit 用户名
+    /// </summary>
+    public required string CommitUserName { get; set; }
+    /// <summary>
+    /// git commit 时间
+    /// </summary>
+    public DateTime CommitTime { get; set; }
+    /// <summary>
+    /// git 提交内容
+    /// </summary>
+    public required string CommitMessage { get; set; }
 }

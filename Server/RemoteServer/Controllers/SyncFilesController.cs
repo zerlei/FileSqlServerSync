@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-
+using RemoteServer.Models;
 namespace RemoteServer.Controllers;
 
 public class SyncFilesController(SqliteDbContext db) : ControllerBase
@@ -17,7 +17,7 @@ public class SyncFilesController(SqliteDbContext db) : ControllerBase
     )
     {
         var item =
-            from i in _db.syncLogHeads
+            from i in _db.SyncLogHeads
             where
                 (
                     string.IsNullOrEmpty(ClientName)
@@ -30,7 +30,7 @@ public class SyncFilesController(SqliteDbContext db) : ControllerBase
             select new
             {
                 Head = i,
-                Files = (from j in _db.syncLogFiles where j.HeadId == i.Id select j).ToList()
+                Files = (from j in _db.SyncLogFiles where j.HeadId == i.Id select j).ToList()
             };
 
         return Ok(item.Skip((page - 1) * rows).Take(rows).ToList());
@@ -86,7 +86,7 @@ public class SyncFilesController(SqliteDbContext db) : ControllerBase
         try
         {
             var CurrentSyncTaskCount = (
-                from i in _db.syncLogHeads
+                from i in _db.SyncLogHeads
                 where i.Status == 0
                 select i
             ).Count();
@@ -97,7 +97,7 @@ public class SyncFilesController(SqliteDbContext db) : ControllerBase
             head.Id = Guid.NewGuid();
             head.SyncTime = DateTime.Now;
             head.Status = 0;
-            _db.syncLogHeads.Add(head);
+            _db.SyncLogHeads.Add(head);
             _db.SaveChanges();
             return Ok(new { IsSuccess = true, head.Id });
         }
@@ -113,7 +113,7 @@ public class SyncFilesController(SqliteDbContext db) : ControllerBase
         try
         {
             var current =
-                (from i in _db.syncLogHeads where i.Id == Id select i).FirstOrDefault()
+                (from i in _db.SyncLogHeads where i.Id == Id select i).FirstOrDefault()
                 ?? throw new Exception("任务不存在！");
             current.Status = Status;
             current.Message = Message;

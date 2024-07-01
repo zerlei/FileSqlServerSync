@@ -17,6 +17,35 @@ namespace RemoteServer.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
 
+            modelBuilder.Entity("RemoteServer.SyncGitCommit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CommitId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CommitMessage")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CommitTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CommitUserName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("HeadId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SyncGitCommits");
+                });
+
             modelBuilder.Entity("RemoteServer.SyncLogFile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -43,7 +72,7 @@ namespace RemoteServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("syncLogFiles");
+                    b.ToTable("SyncLogFiles");
                 });
 
             modelBuilder.Entity("RemoteServer.SyncLogHead", b =>
@@ -61,11 +90,6 @@ namespace RemoteServer.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CommitID")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
@@ -75,9 +99,14 @@ namespace RemoteServer.Migrations
                     b.Property<DateTime>("SyncTime")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("VersionsFromTag")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.ToTable("syncLogHeads");
+                    b.ToTable("SyncLogHeads");
                 });
 #pragma warning restore 612, 618
         }

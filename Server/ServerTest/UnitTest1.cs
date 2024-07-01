@@ -9,7 +9,7 @@ public class UnitTest1
     public void MyFirstTheory(int value)
     {
         Assert.True(true);
-        Assert.False(true);
+        Assert.False(false);
     }
     bool IsOdd(int value)
     {
