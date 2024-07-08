@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using RemoteServer.Models;
+
 using RemoteServer;
 var builder = WebApplication.CreateBuilder(args);
 

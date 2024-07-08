@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using RemoteServer;
+using RemoteServer.Models;
 
 #nullable disable
 
 namespace RemoteServer.Migrations
 {
     [DbContext(typeof(SqliteDbContext))]
-    [Migration("20240701141048_init")]
-    partial class init
+    [Migration("20240708101413_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
