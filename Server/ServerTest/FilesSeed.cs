@@ -4,51 +4,124 @@ using Xunit.Sdk;
 
 namespace ServerTest;
 
-public class FilesSeed
+public class FilesSeed : IDisposable
 {
     public FilesSeed()
     {
         RootDir.WriteFileStrageFunc = (Common.File file) =>
         {
-
             //创建或者不创建直接打开文件
             using (FileStream fs = System.IO.File.OpenWrite(file.Path))
             {
                 byte[] info = Encoding.UTF8.GetBytes($"this is  {file.Path},Now{DateTime.Now}");
                 fs.Write(info, 0, info.Length);
             }
-
+            Console.WriteLine($"WriteFileStrageFunc {file.Path}");
             System.IO.File.SetLastWriteTime(file.Path, file.MTime);
             return (true, "");
         };
-        //创建一个文件数
-        for (int i = 0; i < 3; ++i)
-        {
-            var ndir = new Dir($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}");
-            if (i == 1)
-            {
-                var nnfile = new Common.File($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}.txt", DateTime.Now);
-                ndir.Children.Add(nnfile);
-            }
-            else if (i == 2)
-            {
-                var nndir = new Dir($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}");
-                var nndir2 = new Dir($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}_1");
-                var nnfile = new Common.File($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}.txt", DateTime.Now);
-                ndir.Children.Add(nnfile);
-                var nnfile1 = new Common.File($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}/{i}.txt", DateTime.Now);
-                nndir.Children.Add(nnfile1);
-                var nnfile2_1 = new Common.File($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}_1/{i}_1.txt", DateTime.Now);
-                var nnfile2_2 = new Common.File($"{Directory.GetCurrentDirectory()}/BeforeDir/{i}/{i}_1/{i}_2.txt", DateTime.Now);
-                nndir2.Children.Add(nnfile2_1);
-                nndir2.Children.Add(nnfile2_2);
-                ndir.Children.Add(nndir);
-                ndir.Children.Add(nndir2);
-            }
-            BeforeDir.Children.Add(ndir);
-        }
+        Console.WriteLine("FilesSeed Construct");
+        // string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
+        DateTime beforeTime = DateTime.Now.AddSeconds(-99);
+        DateTime afterTime = beforeTime.AddSeconds(11);
+        BeforeDir = new RootDir(
+            TestPath + "/BeforeDir",
+            [
+                new Dir($"{TestPath}/BeforeDir/0"),
+                new Dir(
+                    $"{TestPath}/BeforeDir/1",
+                    [new Common.File($"{TestPath}/BeforeDir/1/1.txt", beforeTime)]
+                ),
+                new Dir(
+                    $"{TestPath}/BeforeDir/2",
+                    [
+                        new Common.File($"{TestPath}/BeforeDir/2/2.txt", beforeTime),
+                        new Dir(
+                            $"{TestPath}/BeforeDir/2/2_1",
+                            [
+                                new Common.File($"{TestPath}/BeforeDir/2/2_1/1.txt", beforeTime),
+                                new Common.File($"{TestPath}/BeforeDir/2/2_1/2.txt", beforeTime),
+                            ]
+                        ),
+                        new Dir(
+                            $"{TestPath}/BeforeDir/2/2_2",
+                            [
+                                new Common.File($"{TestPath}/BeforeDir/2/2_2/1.txt", beforeTime),
+                                new Common.File($"{TestPath}/BeforeDir/2/2_2/2.txt", beforeTime),
+                                new Dir(
+                                    $"{TestPath}/BeforeDir/2/2_2/2_3",
+                                    [
+                                        new Common.File(
+                                            $"{TestPath}/BeforeDir/2/2_2/2_3/1.txt",
+                                            beforeTime
+                                        ),
+                                    ]
+                                ),
+                            ]
+                        )
+                    ]
+                ),
+            ]
+        );
+        AfterDir = new RootDir(
+            $"{TestPath}/AfterDir",
+            [
+                new Dir($"{TestPath}/AfterDir/0"),
+                new Dir(
+                    $"{TestPath}/AfterDir/1",
+                    [
+                        //不做修改
+                        new Common.File($"{TestPath}/AfterDir/1/1.txt", beforeTime),
+                        //将要删除
+                        new Common.File($"{TestPath}/AfterDir/1/2_D.txt", beforeTime),
+                    ]
+                ),
+                new Dir(
+                    $"{TestPath}/AfterDir/2",
+                    [   
+                        // 将要添加
+                        // new Common.File($"{TestPath}/AfterDir/2/2.txt", beforeTime),
+                        new Dir(
+                            $"{TestPath}/AfterDir/2/2_1",
+                            [
+                                new Common.File($"{TestPath}/AfterDir/2/2_1/1.txt", beforeTime),
+                                new Common.File($"{TestPath}/AfterDir/2/2_1/2.txt", afterTime),
+                            ]
+                        ),
+                        new Dir(
+                            $"{TestPath}/AfterDir/2/2_2",
+                            [
+                                new Common.File($"{TestPath}/AfterDir/2/2_2/1.txt", afterTime),
+                                new Common.File($"{TestPath}/AfterDir/2/2_2/2.txt", afterTime),
+                                new Dir(
+                                    $"{TestPath}/AfterDir/2/2_2/2_3",
+                                    [
+                                        new Common.File(
+                                            $"{TestPath}/AfterDir/2/2_2/2_3/1.txt",
+                                           afterTime 
+                                        ),
+                                    ]
+                                ),
+                            ]
+                        )
+                    ]
+                ),
+            ]
+        );
     }
 
-    public RootDir BeforeDir = new($"{Directory.GetCurrentDirectory()}/BeforeDir");
-    public RootDir AfterDir = new("./AfterDir");
+    private readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
+    public RootDir BeforeDir;
+    public RootDir AfterDir;
+
+    public void Dispose()
+    {
+        // Directory.Delete(BeforeDir.Path, true);
+        Console.WriteLine("FilesSeed Dispose");
+        GC.SuppressFinalize(this);
+    }
+    // ~FilesSeed()
+    // {
+    //      Console.WriteLine("FilesSeed ~");
+    // }
 }
