@@ -1,4 +1,3 @@
-
 namespace Common;
 
 /// <summary>
@@ -10,8 +9,6 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     : AFileOrDir(path, DirOrFile.Dir, nextOp)
 {
     public List<AFileOrDir> Children { get; set; } = children ?? [];
-
-
     public override bool IsEqual(AFileOrDir other)
     {
         if (other is not Dir otherDir)
@@ -499,5 +496,3 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         }
     }
 }
-
-
