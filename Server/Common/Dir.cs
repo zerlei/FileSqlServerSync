@@ -9,6 +9,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     : AFileOrDir(path, DirOrFile.Dir, nextOp)
 {
     public List<AFileOrDir> Children { get; set; } = children ?? [];
+
     public override bool IsEqual(AFileOrDir other)
     {
         if (other is not Dir otherDir)
@@ -38,13 +39,33 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         }
     }
 
-    public Dir Clone(NextOpType? optype, string oldRootPath, string newRootPath, bool IsResetNextOpType = false)
+    /// <summary>
+    /// clone, 但是更改根目录
+    /// </summary>
+    /// <param name="optype">操作步骤</param>
+    /// <param name="oldRootPath">旧根路径</param>
+    /// <param name="newRootPath">新根路径</param>
+    /// <param name="IsResetNextOpType">是否重置下步操作</param>
+    /// <returns></returns>
+    public Dir Clone(
+        NextOpType? optype,
+        string oldRootPath,
+        string newRootPath,
+        bool IsResetNextOpType = false
+    )
     {
         var ndir = this.Clone(optype, IsResetNextOpType);
         ndir.ResetRootPath(oldRootPath, newRootPath);
         return ndir;
     }
 
+    /// <summary>
+    /// clone
+    /// </summary>
+    /// <param name="optype"></param>
+    /// <param name="IsResetNextOpType"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public Dir Clone(NextOpType? optype = null, bool IsResetNextOpType = false)
     {
         var ndir = new Dir(this.Path, [], IsResetNextOpType ? optype : this.NextOp);
@@ -55,7 +76,8 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             {
                 if (x is File file)
                 {
-                    return new File(file.Path, file.MTime, IsResetNextOpType ? optype : file.NextOp) as AFileOrDir;
+                    return new File(file.Path, file.MTime, IsResetNextOpType ? optype : file.NextOp)
+                        as AFileOrDir;
                 }
                 else if (x is Dir dir)
                 {
@@ -70,6 +92,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
 
         return ndir;
     }
+    /// <summary>
+    /// 重设置根目录
+    /// </summary>
+    /// <param name="oldPath"></param>
+    /// <param name="newPath"></param>
     public void ResetRootPath(string oldPath, string newPath)
     {
         this.Path = this.Path.Replace(oldPath, newPath);
@@ -84,13 +111,12 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 dir.ResetRootPath(oldPath, newPath);
             }
         });
-
     }
 
     /// <summary>
     /// 合并两个文件夹,other不会发生改变，this将合并一个副本
     /// </summary>
-    /// <param name="other"></param>
+    /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
     /// <returns></returns>
     public (bool, string) Combine(Dir other)
     {
@@ -102,7 +128,6 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         {
             var ldir = this;
             var rdir = other;
-
 
             foreach (var oc in other.Children)
             {
@@ -116,7 +141,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                         }
                         else
                         {
-                            var n = ldir.Children.Where(x => x.Path == oc.Path && x.Type == DirOrFile.File).FirstOrDefault();
+                            var n = ldir
+                                .Children.Where(x => x.Path == oc.Path && x.Type == DirOrFile.File)
+                                .FirstOrDefault();
                             if (n is not null)
                             {
                                 if (oc.NextOp == NextOpType.Del)
@@ -148,11 +175,12 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                     //当子文件夹和文件不确定时
                     else
                     {
-                        var n = ldir.Children.Where(x => x.Path == rrdir.Path && x.Type == DirOrFile.Dir).FirstOrDefault();
+                        var n = ldir
+                            .Children.Where(x => x.Path == rrdir.Path && x.Type == DirOrFile.Dir)
+                            .FirstOrDefault();
                         if (n is Dir lldir)
                         {
                             lldir.Combine(rrdir);
-
                         }
                     }
                 }
@@ -200,6 +228,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         }
         return (true, "");
     }
+
     /// <summary>
     /// 从文件目录结构提起文件信息，注意，此目录文件树不包含文件内容，仅有修改时间mtime
     /// </summary>
@@ -224,6 +253,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         }
         return (true, "");
     }
+
     /// <summary>
     ///  写入目录文件树，首先必须定义写入文件的策略，此目录结构不包含文件内容,但有一个
     ///  文件的修改时间，是否修改文件的修改时间，需要定义文件的写入策略 WriteFileStrageFunc
@@ -359,7 +389,6 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                     .ToList();
             }
         }
-
 
         //排序，然后对比
         int lIndex_f = 0;
