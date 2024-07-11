@@ -10,49 +10,49 @@ public class FilesSeed : IDisposable
         Dir.WriteFileStrageFunc = (Common.File file) =>
         {
             //创建或者不创建直接打开文件
-            using (FileStream fs = System.IO.File.OpenWrite(file.Path))
+            using (FileStream fs = System.IO.File.OpenWrite(file.FormatedPath))
             {
-                byte[] info = Encoding.UTF8.GetBytes($"this is  {file.Path},Now{DateTime.Now}");
+                byte[] info = Encoding.UTF8.GetBytes($"this is  {file.FormatedPath},Now{DateTime.Now}");
                 fs.Write(info, 0, info.Length);
             }
-            Console.WriteLine($"WriteFileStrageFunc {file.Path}");
-            System.IO.File.SetLastWriteTime(file.Path, file.MTime);
+            Console.WriteLine($"WriteFileStrageFunc {file.FormatedPath}");
+            System.IO.File.SetLastWriteTime(file.FormatedPath, file.MTime);
             return (true, "");
         };
         Console.WriteLine("FilesSeed Construct");
         // string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
-        DateTime beforeTime = DateTime.Now.AddSeconds(-99);
-        DateTime afterTime = beforeTime.AddSeconds(-20);
+        DateTime NewTime = DateTime.Now.AddSeconds(-99);
+        DateTime OldTime = NewTime.AddSeconds(-20);
         NewDir = new Dir(
             TestPath + "/NewDir",
             [
                 new Dir($"{TestPath}/NewDir/0"),
                 new Dir(
                     $"{TestPath}/NewDir/1",
-                    [new Common.File($"{TestPath}/NewDir/1/1.txt", beforeTime)]
+                    [new Common.File($"{TestPath}/NewDir/1/1.txt", NewTime)]
                 ),
                 new Dir(
                     $"{TestPath}/NewDir/2",
                     [
-                        new Common.File($"{TestPath}/NewDir/2/2.txt", beforeTime),
+                        new Common.File($"{TestPath}/NewDir/2/2.txt", NewTime),
                         new Dir(
                             $"{TestPath}/NewDir/2/2_1",
                             [
-                                new Common.File($"{TestPath}/NewDir/2/2_1/1.txt", beforeTime),
-                                new Common.File($"{TestPath}/NewDir/2/2_1/2.txt", beforeTime),
+                                new Common.File($"{TestPath}/NewDir/2/2_1/1.txt", NewTime),
+                                new Common.File($"{TestPath}/NewDir/2/2_1/2.txt", NewTime),
                             ]
                         ),
                         new Dir(
                             $"{TestPath}/NewDir/2/2_2",
                             [
-                                new Common.File($"{TestPath}/NewDir/2/2_2/1.txt", beforeTime),
-                                new Common.File($"{TestPath}/NewDir/2/2_2/2.txt", beforeTime),
+                                new Common.File($"{TestPath}/NewDir/2/2_2/1.txt", NewTime),
+                                new Common.File($"{TestPath}/NewDir/2/2_2/2.txt", NewTime),
                                 new Dir(
                                     $"{TestPath}/NewDir/2/2_2/2_3",
                                     [
                                         new Common.File(
                                             $"{TestPath}/NewDir/2/2_2/2_3/1.txt",
-                                            beforeTime
+                                            NewTime
                                         ),
                                     ]
                                 ),
@@ -67,19 +67,19 @@ public class FilesSeed : IDisposable
             [
                 new Dir(
                     $"{TestPath}/OldDir/1",
-                    [new Common.File($"{TestPath}/OldDir/1/2_D.txt", beforeTime, NextOpType.Del),]
+                    [new Common.File($"{TestPath}/OldDir/1/2_D.txt", NewTime, NextOpType.Del),]
                 ),
                 new Dir(
                     $"{TestPath}/OldDir/2",
                     [
                         // 将要添加
-                        new Common.File($"{TestPath}/OldDir/2/2.txt", beforeTime, NextOpType.Add),
+                        new Common.File($"{TestPath}/OldDir/2/2.txt", NewTime, NextOpType.Add),
                         new Dir(
                             $"{TestPath}/OldDir/2/2_1",
                             [
                                 new Common.File(
                                     $"{TestPath}/OldDir/2/2_1/2.txt",
-                                    beforeTime,
+                                    NewTime,
                                     NextOpType.Modify
                                 ),
                             ]
@@ -89,12 +89,12 @@ public class FilesSeed : IDisposable
                             [
                                 new Common.File(
                                     $"{TestPath}/OldDir/2/2_2/1.txt",
-                                    afterTime,
+                                    OldTime,
                                     NextOpType.Del
                                 ),
                                 new Common.File(
                                     $"{TestPath}/OldDir/2/2_2/2.txt",
-                                    afterTime,
+                                    OldTime,
                                     NextOpType.Del
                                 ),
                                 new Dir(
@@ -102,7 +102,7 @@ public class FilesSeed : IDisposable
                                     [
                                         new Common.File(
                                             $"{TestPath}/OldDir/2/2_2/2_3/1.txt",
-                                            afterTime,
+                                            OldTime,
                                             NextOpType.Del
                                         ),
                                     ],
@@ -116,12 +116,12 @@ public class FilesSeed : IDisposable
                             [
                                 new Common.File(
                                     $"{TestPath}/OldDir/2/2_2/1.txt",
-                                    beforeTime,
+                                    NewTime,
                                     NextOpType.Add
                                 ),
                                 new Common.File(
                                     $"{TestPath}/OldDir/2/2_2/2.txt",
-                                    afterTime,
+                                    NewTime,
                                     NextOpType.Add
                                 ),
                                 new Dir(
@@ -129,7 +129,7 @@ public class FilesSeed : IDisposable
                                     [
                                         new Common.File(
                                             $"{TestPath}/OldDir/2/2_2/2_3/1.txt",
-                                            afterTime,
+                                            NewTime,
                                             NextOpType.Add
                                         ),
                                     ],
@@ -150,34 +150,32 @@ public class FilesSeed : IDisposable
                     $"{TestPath}/OldDir/1",
                     [
                         //不做修改
-                        new Common.File($"{TestPath}/OldDir/1/1.txt", beforeTime),
+                        new Common.File($"{TestPath}/OldDir/1/1.txt", NewTime),
                         //将要删除
-                        new Common.File($"{TestPath}/OldDir/1/2_D.txt", beforeTime),
+                        new Common.File($"{TestPath}/OldDir/1/2_D.txt", NewTime),
                     ]
                 ),
                 new Dir(
                     $"{TestPath}/OldDir/2",
                     [
-                        // 将要添加
-                        // new Common.File($"{TestPath}/OldDir/2/2.txt", beforeTime),
                         new Dir(
                             $"{TestPath}/OldDir/2/2_1",
                             [
-                                new Common.File($"{TestPath}/OldDir/2/2_1/1.txt", beforeTime),
-                                new Common.File($"{TestPath}/OldDir/2/2_1/2.txt", afterTime),
+                                new Common.File($"{TestPath}/OldDir/2/2_1/1.txt", NewTime),
+                                new Common.File($"{TestPath}/OldDir/2/2_1/2.txt", OldTime),
                             ]
                         ),
                         new Dir(
                             $"{TestPath}/OldDir/2/2_2_M",
                             [
-                                new Common.File($"{TestPath}/OldDir/2/2_2/1.txt", afterTime),
-                                new Common.File($"{TestPath}/OldDir/2/2_2/2.txt", afterTime),
+                                new Common.File($"{TestPath}/OldDir/2/2_2/1.txt", OldTime),
+                                new Common.File($"{TestPath}/OldDir/2/2_2/2.txt", OldTime),
                                 new Dir(
                                     $"{TestPath}/OldDir/2/2_2/2_3",
                                     [
                                         new Common.File(
                                             $"{TestPath}/OldDir/2/2_2/2_3/1.txt",
-                                            afterTime
+                                            OldTime
                                         ),
                                     ]
                                 ),
@@ -197,7 +195,7 @@ public class FilesSeed : IDisposable
 
     public void Dispose()
     {
-        Directory.Delete(NewDir.Path, true);
+        Directory.Delete(NewDir.FormatedPath, true);
         Console.WriteLine("FilesSeed Dispose");
         GC.SuppressFinalize(this);
     }

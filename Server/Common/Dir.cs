@@ -18,7 +18,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         }
         else
         {
-            if (this.Path != otherDir.Path || this.NextOp != otherDir.NextOp)
+            if (this.FormatedPath != otherDir.FormatedPath || this.NextOp != otherDir.NextOp)
             {
                 return false;
             }
@@ -68,7 +68,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <exception cref="Exception"></exception>
     public Dir Clone(NextOpType? optype = null, bool IsResetNextOpType = false)
     {
-        var ndir = new Dir(this.Path, [], IsResetNextOpType ? optype : this.NextOp);
+        var ndir = new Dir(this.FormatedPath, [], IsResetNextOpType ? optype : this.NextOp);
 
         var nchildren = this
             .Children.AsEnumerable()
@@ -76,8 +76,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             {
                 if (x is File file)
                 {
-                    return new File(file.Path, file.MTime, IsResetNextOpType ? optype : file.NextOp)
-                        as AFileOrDir;
+                    return new File(
+                            file.FormatedPath,
+                            file.MTime,
+                            IsResetNextOpType ? optype : file.NextOp
+                        ) as AFileOrDir;
                 }
                 else if (x is Dir dir)
                 {
@@ -89,9 +92,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 }
             })
             .ToList();
+        ndir.Children = nchildren;
 
         return ndir;
     }
+
     /// <summary>
     /// 重设置根目录
     /// </summary>
@@ -99,12 +104,12 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <param name="newPath"></param>
     public void ResetRootPath(string oldPath, string newPath)
     {
-        this.Path = this.Path.Replace(oldPath, newPath);
+        this.FormatedPath = this.FormatedPath.Replace(oldPath, newPath);
         this.Children.ForEach(e =>
         {
             if (e is File file)
             {
-                file.Path = file.Path.Replace(oldPath, newPath);
+                file.FormatedPath = file.FormatedPath.Replace(oldPath, newPath);
             }
             else if (e is Dir dir)
             {
@@ -120,7 +125,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <returns></returns>
     public (bool, string) Combine(Dir other)
     {
-        if (this.Path != other.Path)
+        if (this.FormatedPath != other.FormatedPath)
         {
             return (false, "their path is not same");
         }
@@ -137,12 +142,14 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                     {
                         if (oc.NextOp == NextOpType.Add)
                         {
-                            ldir.AddChild(new File(rfile.Path, rfile.MTime, rfile.NextOp));
+                            ldir.AddChild(new File(rfile.FormatedPath, rfile.MTime));
                         }
                         else
                         {
                             var n = ldir
-                                .Children.Where(x => x.Path == oc.Path && x.Type == DirOrFile.File)
+                                .Children.Where(x =>
+                                    x.FormatedPath == oc.FormatedPath && x.Type == DirOrFile.File
+                                )
                                 .FirstOrDefault();
                             if (n is not null)
                             {
@@ -170,13 +177,17 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                     }
                     else if (rrdir.NextOp == NextOpType.Del)
                     {
-                        ldir.Children.Remove(oc);
+                        ldir.Children.RemoveAt(
+                            ldir.Children.FindIndex(x => x.FormatedPath == rrdir.FormatedPath)
+                        );
                     }
                     //当子文件夹和文件不确定时
                     else
                     {
                         var n = ldir
-                            .Children.Where(x => x.Path == rrdir.Path && x.Type == DirOrFile.Dir)
+                            .Children.Where(x =>
+                                x.FormatedPath == rrdir.FormatedPath && x.Type == DirOrFile.Dir
+                            )
                             .FirstOrDefault();
                         if (n is Dir lldir)
                         {
@@ -196,13 +207,13 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <returns></returns>/
     protected (bool, string) AddChild(AFileOrDir child)
     {
-        if (child.Path.Substring(0, this.Path.Length) != this.Path)
+        if (child.FormatedPath.Substring(0, this.FormatedPath.Length) != this.FormatedPath)
         {
             return (false, "their rootpath are not same!");
         }
         var filtedChildren = this.Children.Where(x => x.Type == child.Type);
 
-        var mached = filtedChildren.Where(x => x.Path == child.Path);
+        var mached = filtedChildren.Where(x => x.FormatedPath == child.FormatedPath);
 
         if (mached.Any())
         {
@@ -239,8 +250,8 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         {
             return (false, "this dir is not empty.");
         }
-        string[] files = Directory.GetFiles(this.Path);
-        string[] dirs = Directory.GetDirectories(this.Path);
+        string[] files = Directory.GetFiles(this.FormatedPath);
+        string[] dirs = Directory.GetDirectories(this.FormatedPath);
         foreach (var file in files)
         {
             this.Children.Add(new File(file, System.IO.File.GetLastWriteTime($"{file}")));
@@ -267,7 +278,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             {
                 if (child.Type == DirOrFile.Dir)
                 {
-                    var (IsSuccess, Message) = WriteDirStrageFunc(child.Path);
+                    var (IsSuccess, Message) = WriteDirStrageFunc(child.FormatedPath);
                     if (!IsSuccess)
                     {
                         return (false, Message);
@@ -318,11 +329,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     /// <param name="otherRootDir"></param>
     /// <returns></returns>
-    public (bool, Dir?) Diff(Dir other)
+    public Dir Diff(Dir other)
     {
         var ldir = this;
         var rdir = other;
-        Dir? cDir = new Dir(rdir.Path);
+        Dir? cDir = new Dir(rdir.FormatedPath);
         //分别对文件和文件夹分组
         List<File> lFiles = [];
         List<File> rFiles = [];
@@ -411,7 +422,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             if (lIndex_f == lFiles.Count)
             {
                 var er = rFiles[rIndex_f];
-                cDir.Children.Add(new File(er.Path, er.MTime, NextOpType.Del));
+                cDir.Children.Add(new File(er.FormatedPath, er.MTime, NextOpType.Del));
                 rIndex_f++;
                 continue;
             }
@@ -421,7 +432,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 var el = lFiles[lIndex_f];
 
                 cDir.Children.Add(
-                    new File(el.Path.Replace(ldir.Path, rdir.Path), el.MTime, NextOpType.Add)
+                    new File(
+                        el.FormatedPath.Replace(ldir.FormatedPath, rdir.FormatedPath),
+                        el.MTime,
+                        NextOpType.Add
+                    )
                 );
                 lIndex_f++;
                 continue;
@@ -429,8 +444,8 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             var l = lFiles[lIndex_f];
             var r = rFiles[rIndex_f];
             //将根路径差异抹平
-            var lreativePath = l.Path.Replace(ldir.Path, "");
-            var rreativePath = r.Path.Replace(rdir.Path, "");
+            var lreativePath = l.FormatedPath.Replace(ldir.FormatedPath, "");
+            var rreativePath = r.FormatedPath.Replace(rdir.FormatedPath, "");
             //两文件相同，对比文件修改时间，不同增加到diff内容
             if (lreativePath == rreativePath)
             {
@@ -438,7 +453,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 rIndex_f++;
                 if (l.MTime != r.MTime)
                 {
-                    cDir.Children.Add(new File(r.Path, l.MTime, NextOpType.Modify));
+                    cDir.Children.Add(new File(r.FormatedPath, l.MTime, NextOpType.Modify));
                 }
             }
             else
@@ -447,14 +462,18 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 if (lreativePath.CompareTo(rreativePath) > 0)
                 {
                     rIndex_f++;
-                    cDir.Children.Add(new File(r.Path, r.MTime, NextOpType.Del));
+                    cDir.Children.Add(new File(r.FormatedPath, r.MTime, NextOpType.Del));
                 }
                 //相反，根据左侧，添加一个新增diff
                 else
                 {
                     lIndex_f++;
                     cDir.Children.Add(
-                        new File(l.Path.Replace(ldir.Path, rdir.Path), l.MTime, NextOpType.Add)
+                        new File(
+                            l.FormatedPath.Replace(ldir.FormatedPath, rdir.FormatedPath),
+                            l.MTime,
+                            NextOpType.Add
+                        )
                     );
                 }
             }
@@ -471,31 +490,32 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             if (lIndex_d == lDirs.Count)
             {
                 var er = rDirs[rIndex_d];
+                cDir.Children.Add(er.Clone(NextOpType.Del, true));
                 rIndex_d++;
                 continue;
             }
             if (rIndex_d == rDirs.Count)
             {
                 var el = lDirs[lIndex_d];
+                cDir.Children.Add(
+                    el.Clone(NextOpType.Add, ldir.FormatedPath, rdir.FormatedPath, true)
+                );
                 lIndex_d++;
                 continue;
             }
             var l = lDirs[lIndex_d];
             var r = rDirs[rIndex_d];
-            var lreativePath = l.Path.Replace(ldir.Path, "");
-            var rreativePath = r.Path.Replace(rdir.Path, "");
+            var lreativePath = l.FormatedPath.Replace(ldir.FormatedPath, "");
+            var rreativePath = r.FormatedPath.Replace(rdir.FormatedPath, "");
             if (lreativePath == rreativePath)
             {
                 lIndex_d++;
                 rIndex_d++;
-                var (IsSuccess, rDir) = l.Diff(r);
-                if (IsSuccess && rDir is not null)
+                var rDir = l.Diff(r);
+                //而等于0，这表示此文件夹的内容没有变化
+                if (rDir.Children.Count != 0)
                 {
-                    //而等于0，这表示此文件夹的内容没有变化
-                    if (rDir.Children.Count != 0)
-                    {
-                        cDir.Children.Add(rDir);
-                    }
+                    cDir.Children.Add(rDir);
                 }
             }
             else
@@ -510,18 +530,13 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 }
                 else
                 {
-                    cDir.Children.Add(l.Clone(NextOpType.Add, ldir.Path, rdir.Path, true));
+                    cDir.Children.Add(
+                        l.Clone(NextOpType.Add, ldir.FormatedPath, rdir.FormatedPath, true)
+                    );
                     lIndex_d++;
                 }
             }
         }
-        if (cDir.Children.Count == 0)
-        {
-            return (false, null);
-        }
-        else
-        {
-            return (true, cDir);
-        }
+        return cDir;
     }
 }

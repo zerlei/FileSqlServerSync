@@ -2,15 +2,15 @@
 
 public enum DirOrFile
 {
-    Dir = 'd',
-    File = 'f',
+    Dir = 0,
+    File = 1,
 }
 
 public enum NextOpType
 {
-    Add = 'a',
-    Modify = 'm',
-    Del = 'd'
+    Add = 0,
+    Modify = 1,
+    Del = 2
 }
 
 public abstract class AFileOrDir(
@@ -22,15 +22,26 @@ public abstract class AFileOrDir(
     public DirOrFile Type { get; set; } = type;
     public NextOpType? NextOp { get; set; } = nextOp;
 
+    // private string Path = path;
     /// <summary>
     /// 全部为绝对路径... 占用资源会大一点，但是完全OK
     /// </summary>
-    public string Path { get; set; } = path;
+    ///
+    private string Path = path;
+
+    /// <summary>
+    /// 相当于Path 包装，天杀的windows在路径字符串中使用两种分隔符，“/” 和“\”,这导致，即使两个字符串不相同，也可能是同一个路径。现在把它们统一起来
+    /// </summary>
+    public string FormatedPath
+    {
+        get { return Path.Replace("\\", "/"); }
+        set { Path = value; }
+    }
     public abstract bool IsEqual(AFileOrDir other);
 
     public static int Compare(AFileOrDir l, AFileOrDir r)
     {
-        var pv = l.Path.CompareTo(r.Path);
+        var pv = l.FormatedPath.CompareTo(r.FormatedPath);
         if (pv == 0)
         {
             pv = l.Type.CompareTo(r.Type);
@@ -57,10 +68,12 @@ public class File(string path, DateTime mtime, NextOpType? nextOp = null)
         }
         else
         {
-            return this.MTime == otherFile.MTime
-                && this.Path == otherFile.Path
+            var r =
+                this.MTime == otherFile.MTime
+                && this.FormatedPath == otherFile.FormatedPath
                 && this.NextOp == otherFile.NextOp;
+
+            return r;
         }
     }
 }
-

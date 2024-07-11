@@ -1,8 +1,12 @@
 namespace ServerTest;
 using Common;
+using Newtonsoft.Json;
+using System.Text.Json.Nodes;
 using Xunit;
 /// <summary>
 /// xUnit将会对每个测试方法创建一个测试上下文，IClassFixture可以用来创建类中共享测试上下文，
+/// 
+/// XUnit 的测试方法不是按照顺序执行，所以注意对象状态
 /// </summary>
 public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
 {
@@ -17,7 +21,7 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     {
         var (IsSuccess, Message) = filesSeed.NewDir.WriteByThisInfo();
         Assert.True(IsSuccess);
-        Dir nd = new(filesSeed.NewDir.Path);
+        Dir nd = new(filesSeed.NewDir.FormatedPath);
         nd.ExtractInfo();
         Assert.True(nd.IsEqual(filesSeed.NewDir));
     }
@@ -25,13 +29,18 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     /// <summary>
     /// 测试文件差异比较
     /// </summary>
-    [Fact]
+     [Fact]
     public void FileDirDiff()
     {
-        var (IsSuccess,cDDir) = filesSeed.NewDir.Diff(filesSeed.OldDir);
-        Assert.True(IsSuccess);
-        Assert.True(cDDir is not null);
-        filesSeed.DiffDir.IsEqual(cDDir);
+        var cDDir = filesSeed.NewDir.Diff(filesSeed.OldDir);
+        
+        // Console.WriteLine("################################");
+        // Console.WriteLine(cDDir.Children.Count);
+        //Assert.True(IsSuccess);
+
+        var str = JsonConvert.SerializeObject(cDDir);
+        Assert.True(cDDir.Children.Count !=0);
+        Assert.True(filesSeed.DiffDir.IsEqual(cDDir));
         
     }
 
@@ -41,13 +50,13 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     [Fact]
     public void DirsCombine()
     {
-        var (IsSuccess, Message) = filesSeed.OldDir.Combine(filesSeed.DiffDir);
+        var OldDirClone = filesSeed.OldDir.Clone();
+        var (IsSuccess, Message) = OldDirClone.Combine(filesSeed.DiffDir);
         Assert.True(IsSuccess);
-
-        Assert.False(filesSeed.NewDir.IsEqual(filesSeed.OldDir));
-        filesSeed.OldDir.ResetRootPath("OldDir","NewDir");
-        Console.WriteLine(filesSeed.OldDir.Path);
-        Assert.True(filesSeed.OldDir.IsEqual(filesSeed.NewDir));
+        //Assert.False(filesSeed.NewDir.IsEqual(filesSeed.OldDir));
+        OldDirClone.ResetRootPath("OldDir","NewDir");
+        // Console.WriteLine(filesSeed.OldDir.Path);
+        Assert.True(OldDirClone.IsEqual(filesSeed.NewDir));
         
     }
 
@@ -57,6 +66,6 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     [Fact]
     public void FinalSyncFileDir()
     {
-        filesSeed.GetType();
-    }
+        Assert.True(true);
+    } 
 }
