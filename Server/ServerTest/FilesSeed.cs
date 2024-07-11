@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Common;
-using Xunit.Sdk;
 
 namespace ServerTest;
 
@@ -8,23 +7,23 @@ public class FilesSeed : IDisposable
 {
     public FilesSeed()
     {
-        RootDir.WriteFileStrageFunc = (Common.File file) =>
-        {
-            //创建或者不创建直接打开文件
-            using (FileStream fs = System.IO.File.OpenWrite(file.Path))
-            {
-                byte[] info = Encoding.UTF8.GetBytes($"this is  {file.Path},Now{DateTime.Now}");
-                fs.Write(info, 0, info.Length);
-            }
-            Console.WriteLine($"WriteFileStrageFunc {file.Path}");
-            System.IO.File.SetLastWriteTime(file.Path, file.MTime);
-            return (true, "");
-        };
+        Dir.WriteFileStrageFunc = (Common.File file) =>
+          {
+              //创建或者不创建直接打开文件
+              using (FileStream fs = System.IO.File.OpenWrite(file.Path))
+              {
+                  byte[] info = Encoding.UTF8.GetBytes($"this is  {file.Path},Now{DateTime.Now}");
+                  fs.Write(info, 0, info.Length);
+              }
+              Console.WriteLine($"WriteFileStrageFunc {file.Path}");
+              System.IO.File.SetLastWriteTime(file.Path, file.MTime);
+              return (true, "");
+          };
         Console.WriteLine("FilesSeed Construct");
         // string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
         DateTime beforeTime = DateTime.Now.AddSeconds(-99);
         DateTime afterTime = beforeTime.AddSeconds(11);
-        BeforeDir = new RootDir(
+        BeforeDir = new Dir(
             TestPath + "/BeforeDir",
             [
                 new Dir($"{TestPath}/BeforeDir/0"),
@@ -63,7 +62,7 @@ public class FilesSeed : IDisposable
                 ),
             ]
         );
-        AfterDir = new RootDir(
+        AfterDir = new Dir(
             $"{TestPath}/AfterDir",
             [
                 new Dir($"{TestPath}/AfterDir/0"),
@@ -98,7 +97,7 @@ public class FilesSeed : IDisposable
                                     [
                                         new Common.File(
                                             $"{TestPath}/AfterDir/2/2_2/2_3/1.txt",
-                                           afterTime 
+                                           afterTime
                                         ),
                                     ]
                                 ),
@@ -111,12 +110,12 @@ public class FilesSeed : IDisposable
     }
 
     private readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
-    public RootDir BeforeDir;
-    public RootDir AfterDir;
+    public Dir BeforeDir;
+    public Dir AfterDir;
 
     public void Dispose()
     {
-        // Directory.Delete(BeforeDir.Path, true);
+        Directory.Delete(BeforeDir.Path, true);
         Console.WriteLine("FilesSeed Dispose");
         GC.SuppressFinalize(this);
     }

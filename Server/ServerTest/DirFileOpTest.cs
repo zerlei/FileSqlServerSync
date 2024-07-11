@@ -1,9 +1,6 @@
 namespace ServerTest;
-
-using System.Net;
 using Common;
 using Xunit;
-using Xunit.Sdk;
 /// <summary>
 /// xUnit将会对每个测试方法创建一个测试上下文，IClassFixture可以用来创建类中共享测试上下文，
 /// </summary>
@@ -20,7 +17,7 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     {
         var (IsSuccess, Message) = filesSeed.BeforeDir.WriteByThisInfo();
         Assert.True(IsSuccess);
-        RootDir nd = new(filesSeed.BeforeDir.Path);
+        Dir nd = new(filesSeed.BeforeDir.Path);
         nd.ExtractInfo();
         Assert.True(nd.IsEqual(filesSeed.BeforeDir));
     }
