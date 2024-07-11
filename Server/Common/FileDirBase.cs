@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Common;
+﻿namespace Common;
 
 public enum DirOrFile
 {
@@ -76,6 +74,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
 {
     public List<AFileOrDir> Children { get; set; } = children ?? [];
 
+
     public override bool IsEqual(AFileOrDir other)
     {
         if (other is not Dir otherDir)
@@ -107,37 +106,14 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
 
     public Dir Clone(NextOpType? optype, string oldRootPath, string newRootPath)
     {
-        var ndir = new Dir(this.Path.Replace(oldRootPath, newRootPath));
-
-        var nchildren = this
-            .Children.AsEnumerable()
-            .Select(x =>
-            {
-                if (x is File file)
-                {
-                    return new File(
-                            file.Path.Replace(oldRootPath, newRootPath),
-                            file.MTime,
-                            file.NextOp
-                        ) as AFileOrDir;
-                }
-                else if (x is Dir dir)
-                {
-                    return dir.Clone(optype, oldRootPath, newRootPath);
-                }
-                else
-                {
-                    throw new Exception("cannot be here!");
-                }
-            })
-            .ToList();
-
+        var ndir = this.Clone(optype);
+        ndir.ResetRootPath(oldRootPath, newRootPath);
         return ndir;
     }
 
-    public Dir Clone(NextOpType? optype)
+    public Dir Clone(NextOpType? optype = null, bool IsResetNextOpType = false)
     {
-        var ndir = new Dir(this.Path);
+        var ndir = new Dir(this.Path, [], IsResetNextOpType ? optype : this.NextOp);
 
         var nchildren = this
             .Children.AsEnumerable()
@@ -145,7 +121,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             {
                 if (x is File file)
                 {
-                    return new File(file.Path, file.MTime, file.NextOp) as AFileOrDir;
+                    return new File(file.Path, file.MTime, IsResetNextOpType ? optype : file.NextOp) as AFileOrDir;
                 }
                 else if (x is Dir dir)
                 {
@@ -159,6 +135,22 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             .ToList();
 
         return ndir;
+    }
+    public void ResetRootPath(string oldPath, string newPath)
+    {
+        this.Path = this.Path.Replace(oldPath, newPath);
+        this.Children.ForEach(e =>
+        {
+            if (e is File file)
+            {
+                file.Path = file.Path.Replace(oldPath, newPath);
+            }
+            else if (e is Dir dir)
+            {
+                dir.ResetRootPath(oldPath, newPath);
+            }
+        });
+
     }
 
     /// <summary>
@@ -176,23 +168,37 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         {
             foreach (var oc in other.Children)
             {
-                var (IsSuccess, Message) = this.AddChild(oc);
-                if (!IsSuccess)
+                if (oc is File file)
                 {
-                    return (IsSuccess, Message);
+
                 }
+                else if (oc is Dir dir)
+                {
+
+
+                }
+                /*var (IsSuccess, Message) = this.AddChild(oc);*/
+                /*if (!IsSuccess)*/
+                /*{*/
+                /*    return (IsSuccess, Message);*/
+                /*}*/
+                return (false, "");
             }
         }
         return (true, "");
     }
 
     /// <summary>
-    /// 添加子节点 但是注意，这里没有判断根节点路径是否相同，它们在相同的父目录下
+    /// 添加子节点,根目录相同,才会被添加进去
     /// </summary>
     /// <param name="child"></param>
     /// <returns></returns>/
     protected (bool, string) AddChild(AFileOrDir child)
     {
+        if (child.Path.Substring(0, this.Path.Length) != this.Path)
+        {
+            return (false, "their rootpath are not same!");
+        }
         var filtedChildren = this.Children.Where(x => x.Type == child.Type);
 
         var mached = filtedChildren.Where(x => x.Path == child.Path);
@@ -210,11 +216,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 {
                     foreach (var d in dir.Children)
                     {
-                        var (IsSuccess, Message) = ndir.AddChild(d);
-                        if (!IsSuccess)
-                        {
-                            return (IsSuccess, Message);
-                        }
+                        ndir.AddChild(d);
                     }
                 }
             }
