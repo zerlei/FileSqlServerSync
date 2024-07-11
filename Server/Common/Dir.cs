@@ -91,7 +91,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     }
 
     /// <summary>
-    /// 合并两个文件夹
+    /// 合并两个文件夹,other不会发生改变，this将合并一个副本
     /// </summary>
     /// <param name="other"></param>
     /// <returns></returns>
@@ -103,23 +103,62 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         }
         else
         {
+            var ldir = this;
+            var rdir = other;
+
+
             foreach (var oc in other.Children)
             {
-                if (oc is File file)
+                if (oc is File rfile)
                 {
-
+                    if (rfile.NextOp != null)
+                    {
+                        if (oc.NextOp == NextOpType.Add)
+                        {
+                            ldir.AddChild(new File(rfile.Path, rfile.MTime, rfile.NextOp));
+                        }
+                        else
+                        {
+                            var n = ldir.Children.Where(x => x.Path == oc.Path && x.Type == DirOrFile.File).FirstOrDefault();
+                            if (n is not null)
+                            {
+                                if (oc.NextOp == NextOpType.Del)
+                                {
+                                    ldir.Children.Remove(n);
+                                }
+                                else if (oc.NextOp == NextOpType.Modify)
+                                {
+                                    if (n is File lfile)
+                                    {
+                                        lfile.MTime = rfile.MTime;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                else if (oc is Dir dir)
+                else if (oc is Dir rrdir)
                 {
+                    //新增和删除意味着整个文件夹都被新增和删除
+                    if (rrdir.NextOp == NextOpType.Add)
+                    {
+                        ldir.AddChild(rrdir.Clone(null, true));
+                    }
+                    else if (rrdir.NextOp == NextOpType.Del)
+                    {
+                        ldir.Children.Remove(oc);
+                    }
+                    //当子文件夹和文件不确定时
+                    else
+                    {
+                        var n = ldir.Children.Where(x => x.Path == rrdir.Path && x.Type == DirOrFile.Dir).FirstOrDefault();
+                        if (n is Dir lldir)
+                        {
+                            lldir.Combine(rrdir);
 
-
+                        }
+                    }
                 }
-                /*var (IsSuccess, Message) = this.AddChild(oc);*/
-                /*if (!IsSuccess)*/
-                /*{*/
-                /*    return (IsSuccess, Message);*/
-                /*}*/
-                return (false, "");
             }
         }
         return (true, "");
@@ -256,8 +295,6 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     {
         var ldir = this;
         var rdir = other;
-        ldir.Children.Sort(AFileOrDir.Compare);
-        rdir.Children.Sort(AFileOrDir.Compare);
         Dir? cDir = new Dir(rdir.Path);
         //分别对文件和文件夹分组
         List<File> lFiles = [];
