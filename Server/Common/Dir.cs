@@ -119,11 +119,131 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     }
 
     /// <summary>
-    /// 合并两个文件夹,other不会发生改变，this将合并一个副本
+    /// 文件夹合并
     /// </summary>
-    /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
+    /// <param name="fileDirOp">具体操作步骤</param>
+    /// <param name="diffdir">将要更新的内容</param>
+    /// <param name="IsUpdateObject"> 是否更新Object对象</param>
+    /// <param name="IsUpdateDirFile">是否更新文件目录树</param>
     /// <returns></returns>
-    public (bool, string) Combine(Dir other)
+    public (bool, string) Combine(
+        FileDirOp? fileDirOp,
+        Dir diffdir,
+        bool IsUpdateObject = true,
+        bool IsUpdateDirFile = false
+    )
+    {
+        if (this.FormatedPath != diffdir.FormatedPath)
+        {
+            return (false, "their path is not same");
+        }
+        else
+        {
+            var ldir = this;
+            var rdir = diffdir;
+
+            foreach (var oc in diffdir.Children)
+            {
+                if (oc is File rfile)
+                {
+                    if (rfile.NextOp != null)
+                    {
+                        if (oc.NextOp == NextOpType.Add)
+                        {
+                            if (IsUpdateObject)
+                            {
+                                ldir.AddChild(new File(rfile.FormatedPath, rfile.MTime));
+                            }
+                            if (IsUpdateDirFile)
+                            {
+                                fileDirOp?.FileCreate(rfile.FormatedPath, rfile.MTime);
+                            }
+                        }
+                        else
+                        {
+                            var n = ldir
+                                .Children.Where(x =>
+                                    x.FormatedPath == oc.FormatedPath && x.Type == DirOrFile.File
+                                )
+                                .FirstOrDefault();
+                            if (n is not null)
+                            {
+                                if (oc.NextOp == NextOpType.Del)
+                                {
+                                    if (IsUpdateObject)
+                                    {
+                                        ldir.Children.Remove(n);
+                                    }
+                                    if (IsUpdateDirFile)
+                                    {
+                                        fileDirOp?.FileDel(rfile.FormatedPath);
+                                    }
+                                }
+                                else if (oc.NextOp == NextOpType.Modify)
+                                {
+                                    if (n is File lfile)
+                                    {
+                                        if (IsUpdateObject)
+                                        {
+                                            lfile.MTime = rfile.MTime;
+                                        }
+                                        if (IsUpdateDirFile)
+                                        {
+                                            fileDirOp?.FileModify(rfile.FormatedPath, rfile.MTime);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (oc is Dir rrdir)
+                {
+                    //新增和删除意味着整个文件夹都被新增和删除
+                    if (rrdir.NextOp == NextOpType.Add)
+                    {
+                        if (IsUpdateDirFile)
+                        {
+                            fileDirOp?.DirCreate(rrdir);
+                        }
+                        if (IsUpdateObject)
+                        {
+                            ldir.AddChild(rrdir.Clone(null, true));
+                        }
+                    }
+                    else if (rrdir.NextOp == NextOpType.Del)
+                    {
+                        if (IsUpdateDirFile)
+                        {
+                            fileDirOp?.DirDel(rrdir,false);
+                        }
+                        if (IsUpdateObject)
+                        {
+                            ldir.Children.RemoveAt(
+                                ldir.Children.FindIndex(x => x.FormatedPath == rrdir.FormatedPath)
+                            );
+                        }
+                    }
+                    //当子文件夹和文件不确定时
+                    else
+                    {
+                        var n = ldir
+                            .Children.Where(x =>
+                                x.FormatedPath == rrdir.FormatedPath && x.Type == DirOrFile.Dir
+                            )
+                            .FirstOrDefault();
+                        if (n is Dir lldir)
+                        {
+                            lldir.Combine(fileDirOp, rrdir, IsUpdateObject, IsUpdateDirFile);
+                        }
+                    }
+                }
+            }
+        }
+        return (true, "");
+    }
+
+     public (bool, string) Combine_Old(Dir other)
     {
         if (this.FormatedPath != other.FormatedPath)
         {
@@ -191,7 +311,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                             .FirstOrDefault();
                         if (n is Dir lldir)
                         {
-                            lldir.Combine(rrdir);
+                            lldir.Combine_Old(rrdir);
                         }
                     }
                 }
@@ -201,13 +321,33 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     }
 
     /// <summary>
+    /// 合并两个文件夹,other不会发生改变，this将合并一个副本，这不会改变文件结构
+    /// </summary>
+    /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
+    /// <returns></returns>
+    public (bool, string) CombineJustObject(Dir other)
+    {
+        return Combine(null, other, true, false);
+    }
+
+    /// <summary>
+    /// 合并两个文件夹,other不会发生改变，this将不会改变，而文件结构会改变
+    /// </summary>
+    /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
+    /// <returns></returns>
+    public (bool, string) CombineJustDirFile(FileDirOp fileDirOp, Dir diffDir)
+    {
+        return Combine(fileDirOp, diffDir, false, true);
+    }
+
+    /// <summary>
     /// 添加子节点,根目录相同,才会被添加进去
     /// </summary>
     /// <param name="child"></param>
     /// <returns></returns>/
     protected (bool, string) AddChild(AFileOrDir child)
     {
-        if (child.FormatedPath.Substring(0, this.FormatedPath.Length) != this.FormatedPath)
+        if (child.FormatedPath[..this.FormatedPath.Length] != this.FormatedPath)
         {
             return (false, "their rootpath are not same!");
         }
@@ -270,29 +410,32 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     ///  文件的修改时间，是否修改文件的修改时间，需要定义文件的写入策略 WriteFileStrageFunc
     /// </summary>
     /// <returns></returns>
-    public (bool, string) WriteByThisInfo()
+    public (bool, string) WriteByThisInfo(FileDirOp fileDirOp)
     {
-        static (bool, string) f(Dir dir)
+        static (bool, string) f(Dir dir, FileDirOp fileDirOp)
         {
             foreach (var child in dir.Children)
             {
                 if (child.Type == DirOrFile.Dir)
                 {
-                    var (IsSuccess, Message) = WriteDirStrageFunc(child.FormatedPath);
-                    if (!IsSuccess)
-                    {
-                        return (false, Message);
-                    }
                     if (child is Dir childDir)
                     {
-                        f(childDir);
+                        var (IsSuccess, Message) = fileDirOp.DirCreate(childDir, false);
+                        if (!IsSuccess)
+                        {
+                            return (false, Message);
+                        }
+                        f(childDir, fileDirOp);
                     }
                 }
                 else
                 {
                     if (child is File childFile)
                     {
-                        var (IsSuccess, Message) = WriteFileStrageFunc(childFile);
+                        var (IsSuccess, Message) = fileDirOp.FileCreate(
+                            child.FormatedPath,
+                            childFile.MTime
+                        );
                         if (!IsSuccess)
                         {
                             return (false, Message);
@@ -306,24 +449,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             }
             return (true, "");
         }
-        return f(this);
+        return f(this, fileDirOp);
     }
-#pragma warning disable CA2211 // Non-constant fields should not be visible
-    public static Func<File, (bool, string)> WriteFileStrageFunc = (File file) =>
-    {
-        return (false, "you must implement this function!");
-    };
-#pragma warning restore CA2211 // Non-constant fields should not be visible
-#pragma warning disable CA2211 // Non-constant fields should not be visible
-    public static Func<string, (bool, string)> WriteDirStrageFunc = (string path) =>
-    {
-        if (!Directory.Exists(path))
-        {
-            Directory.CreateDirectory(path);
-        }
-        return (true, "");
-    };
-#pragma warning restore CA2211 // Non-constant fields should not be visible
+
     /// <summary>
     /// 比较两个目录文件树是否相同,不相同返回差异部分,左侧是右侧的下一个版本
     /// </summary>
