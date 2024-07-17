@@ -1,6 +1,7 @@
 > 这是一个基于 asp.net c# 的发布工具。
 
 ```plantuml
+@startuml
 package 服务器 {
 
     component remoteserver
@@ -30,7 +31,7 @@ package webpage [
 asp.net --+ remoteserver
 asp.net --+ localserver
 webpage --+ webtool
-
+@enduml
 ```
 
 ```plantuml
