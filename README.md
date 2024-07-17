@@ -1,7 +1,6 @@
 > 这是一个基于 asp.net c# 的发布工具。
 
 ```plantuml
-@startuml
 package 服务器 {
 
     component remoteserver
@@ -31,68 +30,4 @@ package webpage [
 asp.net --+ remoteserver
 asp.net --+ localserver
 webpage --+ webtool
-@enduml
-```
-
-```plantuml
-@startuml
-entity DirInfo {
-    String ServerPath
-    String LocalPath
-    Arr SpecialFiles
-    Arr ExcludeFiles
-}
-entity FileInfo {
-    DateTime mtime
-    String Path
-}
-entity ConfigInfo {
-    Arr<DirInfo> DirInfos
-    String RemoteAddr
-    String RemoteName
-}
-@enduml
-```
-
-```plantuml
-@startuml
-allowmixing
-skinparam classAttributeIconSize 0
-component sqlite
-package remoteserver {
-    class FilesInfoController {
-        +Arr<FileInfo> GetFilesInfo(DirInfo dirinfo)
-        +UploadFiles(FileInfo)
-    }
-    class SyncLogController {
-        +GetSyncLog()
-    }
-    package SyncPersistence {
-    }
-
-    SyncPersistence --* SyncLogController
-    SyncPersistence --* FilesInfoController
-
-}
-package localserver {
-    class FilesConfigController {
-        - GetLocalFilesInfo()
-        - CompareLocalRemoteFiles()
-        --
-        + SetDirsConfig(Arr<DirInfo> dirs)
-    }
-    package ConfigPersistence {
-    }
-    ConfigPersistence --* FilesConfigController
-}
-FilesConfigController <--> FilesInfoController: 文件及信息传递
-sqlite --* SyncPersistence
-sqlite --* ConfigPersistence
-
-Actor Devloper
-
-Devloper --> FilesConfigController:调用
-
-Devloper --> SyncLogController:查看同步信息
-@enduml
 ```
