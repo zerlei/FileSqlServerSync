@@ -35,7 +35,7 @@ webpage --+ webtool
 ```
 
 ```plantuml
-
+@startuml
 entity DirInfo {
     String ServerPath
     String LocalPath
@@ -51,9 +51,11 @@ entity ConfigInfo {
     String RemoteAddr
     String RemoteName
 }
+@enduml
 ```
 
 ```plantuml
+@startuml
 allowmixing
 skinparam classAttributeIconSize 0
 component sqlite
@@ -92,4 +94,5 @@ Actor Devloper
 Devloper --> FilesConfigController:调用
 
 Devloper --> SyncLogController:查看同步信息
+@enduml
 ```
