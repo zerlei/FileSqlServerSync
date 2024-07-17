@@ -39,6 +39,6 @@ int main() {
 int x  = 0;
 }
 ```
-```whocarelanguage
+```bash
 pwd
 ```
