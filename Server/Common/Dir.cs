@@ -127,7 +127,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <param name="IsUpdateDirFile">是否更新文件目录树</param>
     /// <returns></returns>
     public void Combine(
-        FileDirOp? fileDirOp,
+        FileDirOpStra? fileDirOp,
         Dir diffdir,
         bool IsUpdateObject = true,
         bool IsUpdateDirFile = false
@@ -257,7 +257,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
     /// <returns></returns>
-    public void CombineJustDirFile(FileDirOp fileDirOp, Dir diffDir)
+    public void CombineJustDirFile(FileDirOpStra fileDirOp, Dir diffDir)
     {
         Combine(fileDirOp, diffDir, false, true);
     }
@@ -332,9 +332,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     ///  文件的修改时间，是否修改文件的修改时间，需要定义文件的写入策略 WriteFileStrageFunc
     /// </summary>
     /// <returns></returns>
-    public void WriteByThisInfo(FileDirOp fileDirOp)
+    public void WriteByThisInfo(FileDirOpStra fileDirOp)
     {
-        static void f(Dir dir, FileDirOp fileDirOp)
+        static void f(Dir dir, FileDirOpStra fileDirOp)
         {
             foreach (var child in dir.Children)
             {
