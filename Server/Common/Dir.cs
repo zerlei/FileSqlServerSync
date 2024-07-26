@@ -126,7 +126,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <param name="IsUpdateObject"> 是否更新Object对象</param>
     /// <param name="IsUpdateDirFile">是否更新文件目录树</param>
     /// <returns></returns>
-    public (bool, string) Combine(
+    public void Combine(
         FileDirOp? fileDirOp,
         Dir diffdir,
         bool IsUpdateObject = true,
@@ -135,7 +135,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     {
         if (this.FormatedPath != diffdir.FormatedPath)
         {
-            return (false, "their path is not same");
+            throw new ArgumentException("their path is not same");
         }
         else
         {
@@ -215,7 +215,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                     {
                         if (IsUpdateDirFile)
                         {
-                            fileDirOp?.DirDel(rrdir,false);
+                            fileDirOp?.DirDel(rrdir, false);
                         }
                         if (IsUpdateObject)
                         {
@@ -240,84 +240,6 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 }
             }
         }
-        return (true, "");
-    }
-
-     public (bool, string) Combine_Old(Dir other)
-    {
-        if (this.FormatedPath != other.FormatedPath)
-        {
-            return (false, "their path is not same");
-        }
-        else
-        {
-            var ldir = this;
-            var rdir = other;
-
-            foreach (var oc in other.Children)
-            {
-                if (oc is File rfile)
-                {
-                    if (rfile.NextOp != null)
-                    {
-                        if (oc.NextOp == NextOpType.Add)
-                        {
-                            ldir.AddChild(new File(rfile.FormatedPath, rfile.MTime));
-                        }
-                        else
-                        {
-                            var n = ldir
-                                .Children.Where(x =>
-                                    x.FormatedPath == oc.FormatedPath && x.Type == DirOrFile.File
-                                )
-                                .FirstOrDefault();
-                            if (n is not null)
-                            {
-                                if (oc.NextOp == NextOpType.Del)
-                                {
-                                    ldir.Children.Remove(n);
-                                }
-                                else if (oc.NextOp == NextOpType.Modify)
-                                {
-                                    if (n is File lfile)
-                                    {
-                                        lfile.MTime = rfile.MTime;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (oc is Dir rrdir)
-                {
-                    //新增和删除意味着整个文件夹都被新增和删除
-                    if (rrdir.NextOp == NextOpType.Add)
-                    {
-                        ldir.AddChild(rrdir.Clone(null, true));
-                    }
-                    else if (rrdir.NextOp == NextOpType.Del)
-                    {
-                        ldir.Children.RemoveAt(
-                            ldir.Children.FindIndex(x => x.FormatedPath == rrdir.FormatedPath)
-                        );
-                    }
-                    //当子文件夹和文件不确定时
-                    else
-                    {
-                        var n = ldir
-                            .Children.Where(x =>
-                                x.FormatedPath == rrdir.FormatedPath && x.Type == DirOrFile.Dir
-                            )
-                            .FirstOrDefault();
-                        if (n is Dir lldir)
-                        {
-                            lldir.Combine_Old(rrdir);
-                        }
-                    }
-                }
-            }
-        }
-        return (true, "");
     }
 
     /// <summary>
@@ -325,9 +247,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
     /// <returns></returns>
-    public (bool, string) CombineJustObject(Dir other)
+    public void CombineJustObject(Dir other)
     {
-        return Combine(null, other, true, false);
+        Combine(null, other, true, false);
     }
 
     /// <summary>
@@ -335,9 +257,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
     /// <returns></returns>
-    public (bool, string) CombineJustDirFile(FileDirOp fileDirOp, Dir diffDir)
+    public void CombineJustDirFile(FileDirOp fileDirOp, Dir diffDir)
     {
-        return Combine(fileDirOp, diffDir, false, true);
+        Combine(fileDirOp, diffDir, false, true);
     }
 
     /// <summary>
@@ -345,11 +267,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     /// <param name="child"></param>
     /// <returns></returns>/
-    protected (bool, string) AddChild(AFileOrDir child)
+    protected void AddChild(AFileOrDir child)
     {
         if (child.FormatedPath[..this.FormatedPath.Length] != this.FormatedPath)
         {
-            return (false, "their rootpath are not same!");
+            throw new ArgumentException("their rootpath are not same!");
         }
         var filtedChildren = this.Children.Where(x => x.Type == child.Type);
 
@@ -359,7 +281,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         {
             if (child is File)
             {
-                return (false, "there are same path in the children");
+                throw new ArgumentException(
+                    $"there are same path in the children:{child.FormatedPath}"
+                );
             }
             else if (child is Dir dir)
             {
@@ -377,18 +301,17 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         {
             this.Children.Add(child);
         }
-        return (true, "");
     }
 
     /// <summary>
     /// 从文件目录结构提起文件信息，注意，此目录文件树不包含文件内容，仅有修改时间mtime
     /// </summary>
     /// <returns></returns>
-    public (bool, string) ExtractInfo()
+    public void ExtractInfo()
     {
         if (this.Children.Count != 0)
         {
-            return (false, "this dir is not empty.");
+            throw new NotSupportedException("this dir is not empty.");
         }
         string[] files = Directory.GetFiles(this.FormatedPath);
         string[] dirs = Directory.GetDirectories(this.FormatedPath);
@@ -402,7 +325,6 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
             ndir.ExtractInfo();
             this.Children.Add(ndir);
         }
-        return (true, "");
     }
 
     /// <summary>
@@ -410,9 +332,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     ///  文件的修改时间，是否修改文件的修改时间，需要定义文件的写入策略 WriteFileStrageFunc
     /// </summary>
     /// <returns></returns>
-    public (bool, string) WriteByThisInfo(FileDirOp fileDirOp)
+    public void WriteByThisInfo(FileDirOp fileDirOp)
     {
-        static (bool, string) f(Dir dir, FileDirOp fileDirOp)
+        static void f(Dir dir, FileDirOp fileDirOp)
         {
             foreach (var child in dir.Children)
             {
@@ -420,11 +342,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 {
                     if (child is Dir childDir)
                     {
-                        var (IsSuccess, Message) = fileDirOp.DirCreate(childDir, false);
-                        if (!IsSuccess)
-                        {
-                            return (false, Message);
-                        }
+                        fileDirOp.DirCreate(childDir, false);
                         f(childDir, fileDirOp);
                     }
                 }
@@ -432,24 +350,16 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                 {
                     if (child is File childFile)
                     {
-                        var (IsSuccess, Message) = fileDirOp.FileCreate(
-                            child.FormatedPath,
-                            childFile.MTime
-                        );
-                        if (!IsSuccess)
-                        {
-                            return (false, Message);
-                        }
+                        fileDirOp.FileCreate(child.FormatedPath, childFile.MTime);
                     }
                     else
                     {
-                        return (false, "child is not File!");
+                        throw new ArgumentException("child is not File!");
                     }
                 }
             }
-            return (true, "");
         }
-        return f(this, fileDirOp);
+        f(this, fileDirOp);
     }
 
     /// <summary>
