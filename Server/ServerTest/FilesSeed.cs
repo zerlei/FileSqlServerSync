@@ -173,14 +173,14 @@ public class FilesSeed : IDisposable
                 ),
             ]
         );
-        fileDirOp = new SimpleFileDirOpForTest();
+        fileDirOp = new SimpleFileDirOp();
     }
 
     private readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
     public Dir NewDir;
     public Dir OldDir;
     public Dir DiffDir;
-    public FileDirOp fileDirOp;
+    public FileDirOpStra fileDirOp;
 
     public void Dispose()
     {
