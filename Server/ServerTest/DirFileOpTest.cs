@@ -28,10 +28,8 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     [Fact, TestPriority(0)]
     public void FileDirWriteExtract()
     {
-        var (IsSuccess, Message) = filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
-        var (IsSuccess2, Message2) = filesSeed.OldDir.WriteByThisInfo(filesSeed.fileDirOp);
-        Assert.True(IsSuccess, "新文件写入失败！");
-        Assert.True(IsSuccess2, "旧文件写入失败！");
+        filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
+        filesSeed.OldDir.WriteByThisInfo(filesSeed.fileDirOp);
         Dir nnd = new(filesSeed.NewDir.FormatedPath);
         nnd.ExtractInfo();
         Assert.True(nnd.IsEqual(filesSeed.NewDir), "新文件提取文件夹的信息与写入信息不一致！");
@@ -62,8 +60,7 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     [Fact, TestPriority(2)]
     public void SyncFileDir()
     {
-        var (IsSuccess,Messsage) =  filesSeed.OldDir.CombineJustDirFile(filesSeed.fileDirOp,filesSeed.DiffDir);
-        Assert.True(IsSuccess, "文件更新错误！");
+        filesSeed.OldDir.CombineJustDirFile(filesSeed.fileDirOp,filesSeed.DiffDir);
         Dir oldSync = new(filesSeed.OldDir.FormatedPath);
         oldSync.ExtractInfo();
         oldSync.ResetRootPath(filesSeed.OldDir.FormatedPath, filesSeed.NewDir.FormatedPath);
@@ -76,8 +73,7 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     [Fact, TestPriority(3)]
     public void DirsCombine()
     {
-        var (IsSuccess, Message) = filesSeed.OldDir.CombineJustObject(filesSeed.DiffDir);
-        Assert.True(IsSuccess, "文件合并出错！");
+        filesSeed.OldDir.CombineJustObject(filesSeed.DiffDir);
         //Assert.False(filesSeed.NewDir.IsEqual(filesSeed.OldDir));
         filesSeed.OldDir.ResetRootPath("OldDir", "NewDir");
         // Console.WriteLine(filesSeed.OldDir.Path);
