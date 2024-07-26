@@ -127,7 +127,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <param name="IsUpdateDirFile">是否更新文件目录树</param>
     /// <returns></returns>
     public void Combine(
-        FileDirOp? fileDirOp,
+        FileDirOpStra? fileDirOp,
         Dir diffdir,
         bool IsUpdateObject = true,
         bool IsUpdateDirFile = false
@@ -257,7 +257,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
     /// <returns></returns>
-    public void CombineJustDirFile(FileDirOp fileDirOp, Dir diffDir)
+    public void CombineJustDirFile(FileDirOpStra fileDirOp, Dir diffDir)
     {
         Combine(fileDirOp, diffDir, false, true);
     }
@@ -332,9 +332,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     ///  文件的修改时间，是否修改文件的修改时间，需要定义文件的写入策略 WriteFileStrageFunc
     /// </summary>
     /// <returns></returns>
-    public void WriteByThisInfo(FileDirOp fileDirOp)
+    public void WriteByThisInfo(FileDirOpStra fileDirOp)
     {
-        static void f(Dir dir, FileDirOp fileDirOp)
+        static void f(Dir dir, FileDirOpStra fileDirOp)
         {
             foreach (var child in dir.Children)
             {
@@ -363,7 +363,94 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     }
 
     /// <summary>
-    /// 比较两个目录文件树是否相同,不相同返回差异部分,左侧是右侧的下一个版本
+    /// 校验文件夹和文件权限
+    /// </summary>
+    public void AccessCheck()
+    {
+        this.Children.ForEach(e =>
+        {
+            if (e is File file)
+            {
+                if (file.NextOp == null) { }
+                else if (file.NextOp == NextOpType.Add)
+                {
+                    if (
+                        !AccessWrapper.CheckDirAccess(
+                            Path.GetDirectoryName(file.FormatedPath)
+                                ?? throw new DirectoryNotFoundException(
+                                    $"{file.FormatedPath} 此父路径不存在"
+                                ),
+                            [DirAcess.CreateFiles]
+                        )
+                    )
+                    {
+                        throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限创建文件");
+                    }
+                }
+                else if (file.NextOp == NextOpType.Modify)
+                {
+                    if (
+                        !(
+                            AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete])
+                            && AccessWrapper.CheckDirAccess(
+                                Path.GetDirectoryName(file.FormatedPath)
+                                    ?? throw new DirectoryNotFoundException(
+                                        $"{file.FormatedPath} 此父路径不存在"
+                                    ),
+                                [DirAcess.CreateFiles]
+                            )
+                        )
+                    )
+                    {
+                        throw new UnauthorizedAccessException(
+                            $"{file.FormatedPath} 无权限删除源文件或者创建新文件"
+                        );
+                    }
+                }
+                else if (file.NextOp == NextOpType.Del)
+                {
+                    if (!AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete]))
+                    {
+                        throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限删除源文件");
+                    }
+                }
+            }
+            else if (e is Dir dir)
+            {
+                if (dir.NextOp == null) { }
+                else if (dir.NextOp == NextOpType.Add)
+                {
+                    if (
+                        !AccessWrapper.CheckDirAccess(
+                            Path.GetDirectoryName(dir.FormatedPath)
+                                ?? throw new DirectoryNotFoundException(
+                                    $"{dir.FormatedPath} 此父路径不存在"
+                                ),
+                            [DirAcess.CreateDirectories, DirAcess.CreateFiles]
+                        )
+                    )
+                    {
+                        throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限创建文件夹或者文件");
+                    }
+                }
+                else if (dir.NextOp == NextOpType.Del)
+                {
+                    if (!AccessWrapper.CheckDirAccess(dir.FormatedPath, [DirAcess.Delete]))
+                    {
+                        throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限删除文件夹");
+                    } else {
+                        //校验是否拥有子文件或者文件夹的删除权限，
+                        dir.AccessCheck();
+                    }
+                }
+            }
+        });
+    }
+
+    /// <summary>
+    /// 比较两个目录文件树是否相同,不相同返回差异部分,左侧是右侧的下一个版本,任何一个节点的nextop != null，即所有
+    /// 节点都会打上标记
+    /// 文件夹的 NextOp 只有新增和删除
     /// </summary>
     /// <param name="otherRootDir"></param>
     /// <returns></returns>
