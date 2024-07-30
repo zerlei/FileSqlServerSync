@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
@@ -45,19 +46,55 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath) : FileDirO
         var x = DstRootPath;
     }
 
-    public override void FileCreate(string absolutePath, DateTime mtime)
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="absolutePath"></param>
+    /// <param name="mtime"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    public override void FileCreate(string srcPath, DateTime mtime)
     {
-        throw new NotImplementedException();
+        var dstPath = srcPath.Replace(SrcRootPath, DstRootPath);
+
+        var dstDirPath =
+            Path.GetDirectoryName(dstPath) ?? throw new NullReferenceException("父路径不存在！");
+        if (!Directory.Exists(dstDirPath))
+        {
+            Directory.CreateDirectory(dstDirPath);
+        }
+
+        System.IO.File.Copy(srcPath, dstPath, true);
     }
 
     public override void DirCreate(Dir dir, bool IsRecursion = true)
     {
-        throw new NotImplementedException();
+        var srcPath = dir.FormatedPath;
+        var dstPath = srcPath.Replace(SrcRootPath, DstRootPath);
+        var dstDirPath =
+            Path.GetDirectoryName(dstPath) ?? throw new NullReferenceException("父路径不存在！");
+        if (!Directory.Exists(dstDirPath))
+        {
+            Directory.CreateDirectory(dstDirPath);
+        }
+        if (IsRecursion)
+        {
+            foreach (var c in dir.Children)
+            {
+                if (c is Dir d)
+                {
+                    this.DirCreate(d, true);
+                }
+                else if (c is File f)
+                {
+                    this.FileCreate(f.FormatedPath, f.MTime);
+                }
+            }
+        }
     }
 
     public override void FileModify(string absolutePath, DateTime mtime)
     {
-        throw new NotImplementedException();
+        this.FileCreate(absolutePath, mtime);
     }
 
     public override void FileDel(string absolutePath)
@@ -172,11 +209,6 @@ public enum DirAcess
     Write,
 
     /// <summary>
-    /// 修改权限
-    /// </summary>
-    Modify,
-
-    /// <summary>
     /// 列出文件夹权限
     /// </summary>
     ListDirectory,
@@ -219,7 +251,6 @@ public class AccessWrapper
                 [
                     DirAcess.Read,
                     DirAcess.Write,
-                    DirAcess.Modify,
                     DirAcess.Delete,
                     DirAcess.ListDirectory,
                     DirAcess.CreateFiles,
@@ -240,109 +271,22 @@ public class AccessWrapper
                     InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
 
                 var cUser =
-                    WindowsIdentity.GetCurrent().User
-                    ?? throw new Exception("GetWindowsIdentity failed. 你需要手动处理发布内容！");
-                FileSystemAccessRule ReadRule =
-                    new(
-                        cUser,
-                        FileSystemRights.Read,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                FileSystemAccessRule WriteRule =
-                    new(
-                        cUser,
-                        FileSystemRights.Write,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                FileSystemAccessRule ModifyRule =
+                    (
+                        WindowsIdentity.GetCurrent().Groups
+                        ?? throw new Exception("GetWindowsIdentity failed. 你需要手动处理发布内容！--检查权限！")
+                    ).FirstOrDefault() ?? throw new NullReferenceException("can't be null");
+                FileSystemAccessRule MdfRule =
                     new(
                         cUser,
                         FileSystemRights.Modify,
                         inherits,
-                        PropagationFlags.None,
+                        PropagationFlags.InheritOnly,
                         AccessControlType.Allow
                     );
-                FileSystemAccessRule DeleteRule =
-                    new(
-                        cUser,
-                        FileSystemRights.Delete,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                FileSystemAccessRule ListDirectoryRule =
-                    new(
-                        cUser,
-                        FileSystemRights.ListDirectory,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                FileSystemAccessRule CreateFilesRule =
-                    new(
-                        cUser,
-                        FileSystemRights.CreateFiles,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                FileSystemAccessRule CreateDirsRule =
-                    new(
-                        cUser,
-                        FileSystemRights.CreateDirectories,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                FileSystemAccessRule DeleteSubdirectoriesAndFilesRule =
-                    new(
-                        cUser,
-                        FileSystemRights.DeleteSubdirectoriesAndFiles,
-                        inherits,
-                        PropagationFlags.None,
-                        AccessControlType.Allow
-                    );
-                if (
-                    dirSecurity.ModifyAccessRule(AccessControlModification.Add, ReadRule, out _)
-                    && dirSecurity.ModifyAccessRule(AccessControlModification.Add, WriteRule, out _)
-                    && dirSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        ModifyRule,
-                        out _
-                    )
-                    && dirSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        ListDirectoryRule,
-                        out _
-                    )
-                    && dirSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        CreateFilesRule,
-                        out _
-                    )
-                    && dirSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        CreateDirsRule,
-                        out _
-                    )
-                    && dirSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        DeleteRule,
-                        out _
-                    )
-                    && dirSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        DeleteSubdirectoriesAndFilesRule,
-                        out _
-                    )
-                ) { }
+                if (dirSecurity.ModifyAccessRule(AccessControlModification.Set, MdfRule, out _)) { }
                 else
                 {
-                    throw new Exception("AddAccessRule failed. 你需要手动处理发布内容！");
+                    throw new Exception("AddAccessRule failed. 你需要手动处理发布内容！--检查权限!");
                 }
                 //设置访问权限
                 dirInfo.SetAccessControl(dirSecurity);
@@ -377,37 +321,19 @@ public class AccessWrapper
                 FileSecurity fileSecurity = fileInfo.GetAccessControl();
 
                 var cUser =
-                    WindowsIdentity.GetCurrent().User
-                    ?? throw new Exception("GetWindowsIdentity failed. 你需要手动处理发布内容！");
-                FileSystemAccessRule ReadRule =
-                    new(cUser, FileSystemRights.Read, AccessControlType.Allow);
-                FileSystemAccessRule WriteRule =
-                    new(cUser, FileSystemRights.Write, AccessControlType.Allow);
-                FileSystemAccessRule DeleteRule =
-                    new(cUser, FileSystemRights.Delete, AccessControlType.Allow);
-                FileSystemAccessRule ExecuteRule =
-                    new(cUser, FileSystemRights.ExecuteFile, AccessControlType.Allow);
-                if (
-                    fileSecurity.ModifyAccessRule(AccessControlModification.Add, ReadRule, out _)
-                    && fileSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        WriteRule,
-                        out _
-                    )
-                    && fileSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        DeleteRule,
-                        out _
-                    )
-                    && fileSecurity.ModifyAccessRule(
-                        AccessControlModification.Add,
-                        ExecuteRule,
-                        out _
-                    )
-                ) { }
+                    (
+                        WindowsIdentity.GetCurrent().Groups
+                        ?? throw new NullReferenceException(
+                            "GetWindowsIdentity failed. 你需要手动处理发布内容！-- 检查权限"
+                        )
+                    ).FirstOrDefault() ?? throw new NullReferenceException("can't be null");
+                FileSystemAccessRule MdfRule =
+                    new(cUser, FileSystemRights.Modify, AccessControlType.Allow);
+                if (fileSecurity.ModifyAccessRule(AccessControlModification.Set, MdfRule, out _))
+                { }
                 else
                 {
-                    throw new Exception("AddAccessRule failed. 你需要手动处理发布内容！");
+                    throw new Exception("AddAccessRule failed. 你需要手动处理发布内容！--检查权限");
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -431,50 +357,72 @@ public class AccessWrapper
             //获得该文件的访问权限
             var dirSecurity = dirInfo.GetAccessControl();
             var ac = dirSecurity
-                .GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount))
+                .GetAccessRules(true, true, typeof(System.Security.Principal.SecurityIdentifier))
                 .Cast<FileSystemAccessRule>();
 #pragma warning disable CA1416 // Validate platform compatibility
             var it =
                 from i in ac
-                where i.IdentityReference == WindowsIdentity.GetCurrent().User
+                where
+                    (
+                        WindowsIdentity.GetCurrent().Groups
+                        ?? throw new NullReferenceException("未能获取当前用户组！")
+                    ).Contains(i.IdentityReference)
                 select i;
 #pragma warning restore CA1416 // Validate platform compatibility
             List<DirAcess> caccess = [];
             foreach (var i in it)
             {
-                if (i.FileSystemRights == FileSystemRights.FullControl)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.FullControl))
                 {
                     return true;
                 }
-                else if (i.FileSystemRights == FileSystemRights.Read)
+                if (
+                    i.FileSystemRights.HasFlag(
+                        FileSystemRights.Read
+                            | FileSystemRights.Modify
+                            | FileSystemRights.ReadAndExecute
+                    )
+                )
                 {
                     caccess.Add(DirAcess.Read);
                 }
-                else if (i.FileSystemRights == FileSystemRights.Write)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.Write | FileSystemRights.Modify))
                 {
                     caccess.Add(DirAcess.Write);
                 }
-                else if (i.FileSystemRights == FileSystemRights.Delete)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.Modify | FileSystemRights.Delete))
                 {
                     caccess.Add(DirAcess.Delete);
                 }
-                else if (i.FileSystemRights == FileSystemRights.Modify)
-                {
-                    caccess.Add(DirAcess.Modify);
-                }
-                else if (i.FileSystemRights == FileSystemRights.ListDirectory)
+                if (
+                    i.FileSystemRights.HasFlag(
+                        FileSystemRights.ListDirectory | FileSystemRights.Modify
+                    )
+                )
                 {
                     caccess.Add(DirAcess.ListDirectory);
                 }
-                else if (i.FileSystemRights == FileSystemRights.CreateFiles)
+                if (
+                    i.FileSystemRights.HasFlag(
+                        FileSystemRights.CreateFiles | FileSystemRights.Modify
+                    )
+                )
                 {
                     caccess.Add(DirAcess.CreateFiles);
                 }
-                else if (i.FileSystemRights == FileSystemRights.CreateDirectories)
+                if (
+                    i.FileSystemRights.HasFlag(
+                        FileSystemRights.CreateDirectories | FileSystemRights.Modify
+                    )
+                )
                 {
                     caccess.Add(DirAcess.CreateDirectories);
                 }
-                else if (i.FileSystemRights == FileSystemRights.DeleteSubdirectoriesAndFiles)
+                if (
+                    i.FileSystemRights.HasFlag(
+                        FileSystemRights.DeleteSubdirectoriesAndFiles | FileSystemRights.Modify
+                    )
+                )
                 {
                     caccess.Add(DirAcess.DeleteSubdirectoriesAndFiles);
                 }
@@ -508,37 +456,45 @@ public class AccessWrapper
             FileInfo fileInfo = new(absolutePath);
             //获得该文件的访问权限
             FileSecurity fileSecurity = fileInfo.GetAccessControl();
+
             var ac = fileSecurity
-                .GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount))
+                .GetAccessRules(true, true, typeof(System.Security.Principal.SecurityIdentifier))
                 .Cast<FileSystemAccessRule>();
-#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1416 // 验证平台兼容性
             var it =
                 from i in ac
-                where i.IdentityReference == WindowsIdentity.GetCurrent().User
+                where
+                    (
+                        WindowsIdentity.GetCurrent().Groups
+                        ?? throw new NullReferenceException("未能获取当前用户组！")
+                    ).Contains(i.IdentityReference)
                 select i;
-#pragma warning restore CA1416 // Validate platform compatibility
-
+#pragma warning restore CA1416 // 验证平台兼容性
 
             List<FileAccess> caccess = [];
             foreach (var i in it)
             {
-                if (i.FileSystemRights == FileSystemRights.FullControl)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.FullControl))
                 {
                     return true;
                 }
-                else if (i.FileSystemRights == FileSystemRights.Read)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.Read | FileSystemRights.Modify))
                 {
                     caccess.Add(FileAccess.Read);
                 }
-                else if (i.FileSystemRights == FileSystemRights.Write)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.Write | FileSystemRights.Modify))
                 {
                     caccess.Add(FileAccess.Write);
                 }
-                else if (i.FileSystemRights == FileSystemRights.Delete)
+                if (i.FileSystemRights.HasFlag(FileSystemRights.Write | FileSystemRights.Modify))
                 {
                     caccess.Add(FileAccess.Delete);
                 }
-                else if (i.FileSystemRights == FileSystemRights.ExecuteFile)
+                if (
+                    i.FileSystemRights.HasFlag(
+                        FileSystemRights.ExecuteFile | FileSystemRights.Modify
+                    )
+                )
                 {
                     caccess.Add(FileAccess.Execute);
                 }

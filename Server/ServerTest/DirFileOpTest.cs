@@ -60,7 +60,7 @@ public class DirFileOpTest(FilesSeed filesSeed) : IClassFixture<FilesSeed>
     [Fact, TestPriority(2)]
     public void SyncFileDir()
     {
-        filesSeed.OldDir.CombineJustDirFile(filesSeed.fileDirOp,filesSeed.DiffDir);
+        filesSeed.OldDir.CombineJustDirFile(filesSeed.fileDirOp, filesSeed.DiffDir);
         Dir oldSync = new(filesSeed.OldDir.FormatedPath);
         oldSync.ExtractInfo();
         oldSync.ResetRootPath(filesSeed.OldDir.FormatedPath, filesSeed.NewDir.FormatedPath);
