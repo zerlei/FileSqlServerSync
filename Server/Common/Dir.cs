@@ -133,6 +133,11 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         bool IsUpdateDirFile = false
     )
     {
+        ///验证 target 文件或者文件夹是否具备相关文件权限。
+        if (IsUpdateDirFile)
+        {
+            diffdir.AccessCheck();
+        }
         if (this.FormatedPath != diffdir.FormatedPath)
         {
             throw new ArgumentException("their path is not same");
@@ -365,7 +370,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// <summary>
     /// 校验文件夹和文件权限
     /// </summary>
-    public void AccessCheck()
+    private void AccessCheck()
     {
         this.Children.ForEach(e =>
         {
@@ -438,7 +443,9 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
                     if (!AccessWrapper.CheckDirAccess(dir.FormatedPath, [DirAcess.Delete]))
                     {
                         throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限删除文件夹");
-                    } else {
+                    }
+                    else
+                    {
                         //校验是否拥有子文件或者文件夹的删除权限，
                         dir.AccessCheck();
                     }
