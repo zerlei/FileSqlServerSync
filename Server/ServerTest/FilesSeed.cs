@@ -176,7 +176,7 @@ public class FilesSeed : IDisposable
         fileDirOp = new SimpleFileDirOp();
     }
 
-    private readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
+    public readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
     public Dir NewDir;
     public Dir OldDir;
     public Dir DiffDir;
@@ -184,8 +184,14 @@ public class FilesSeed : IDisposable
 
     public void Dispose()
     {
-        Directory.Delete($"{TestPath}/OldDir", true);
-        Directory.Delete($"{TestPath}/NewDir", true);
+        if (Directory.Exists($"{TestPath}/OldDir"))
+        {
+            Directory.Delete($"{TestPath}/OldDir", true);
+        }
+        if (Directory.Exists($"{TestPath}/NewDir"))
+        {
+            Directory.Delete($"{TestPath}/NewDir", true);
+        }
         Console.WriteLine("FilesSeed Dispose");
         GC.SuppressFinalize(this);
     }

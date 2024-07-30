@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.VisualBasic;
 
 namespace Common;
@@ -26,7 +27,8 @@ public abstract class FileDirOpStra
 /// 文件目录打包
 /// </summary>
 /// <param name="dstRootPath"></param>
-public class FileDirOpForPack(string srcRootPath, string dstRootPath) : FileDirOpStra
+public class FileDirOpForPack(string srcRootPath, string dstRootPath, string syncId = "")
+    : FileDirOpStra
 {
     /// <summary>
     /// 目标根目录
@@ -38,12 +40,78 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath) : FileDirO
     /// </summary>
     public readonly string SrcRootPath = srcRootPath;
 
+    public readonly string SyncId = string.IsNullOrEmpty(syncId)
+        ? Guid.NewGuid().ToString()
+        : syncId;
+
     /// <summary>
     /// 最终完成时的压缩
     /// </summary>
     public void FinallyCompress()
     {
-        var x = DstRootPath;
+        static List<string> GetFilesResus(string dirPath)
+        {
+            var files = new List<string>();
+            foreach (var file in Directory.GetFiles(dirPath))
+            {
+                files.Add(file);
+            }
+            foreach (var dir in Directory.GetDirectories(dirPath))
+            {
+                foreach (var file in GetFilesResus(dir))
+                {
+                    files.Add(file);
+                }
+            }
+            return files;
+        }
+        var fileNames = GetFilesResus(SrcRootPath);
+        var OuptPutFile = Path.GetDirectoryName(DstRootPath) + $"/{SyncId}.zip";
+        using FileStream fsOut = new(OuptPutFile, FileMode.Create);
+        using ZipOutputStream zipStream = new(fsOut);
+        {
+            zipStream.SetLevel(9); // 设置压缩级别
+            zipStream.Password = "VSXsdf.123d7802zw@#4_"; // 设置密码
+            byte[] buffer = new byte[4096];
+
+            foreach (string file in fileNames)
+            {
+                // Using GetFileName makes the result compatible with XP
+                // as the resulting path is not absolute.
+                var entry = new ZipEntry(file.Replace(SrcRootPath, ""));
+
+                // Setup the entry data as required.
+
+                // Crc and size are handled by the library for seakable streams
+                // so no need to do them here.
+
+                // Could also use the last write time or similar for the file.
+                //entry.DateTime = ;
+                entry.DateTime = System.IO.File.GetLastWriteTime(file);
+                zipStream.PutNextEntry(entry);
+
+                using (FileStream fs = System.IO.File.OpenRead(file))
+                {
+                    // Using a fixed size buffer here makes no noticeable difference for output
+                    // but keeps a lid on memory usage.
+                    int sourceBytes;
+                    do
+                    {
+                        sourceBytes = fs.Read(buffer, 0, buffer.Length);
+                        zipStream.Write(buffer, 0, sourceBytes);
+                    } while (sourceBytes > 0);
+                }
+            }
+
+            // Finish/Close arent needed strictly as the using statement does this automatically
+
+            // Finish is important to ensure trailing information for a Zip file is appended.  Without this
+            // the created file would be invalid.
+            zipStream.Finish();
+
+            // Close is important to wrap things up and unlock the file.
+            zipStream.Close();
+        }
     }
 
     /// <summary>
@@ -97,26 +165,69 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath) : FileDirO
         this.FileCreate(absolutePath, mtime);
     }
 
-    public override void FileDel(string absolutePath)
-    {
-        throw new NotImplementedException();
-    }
+    public override void FileDel(string absolutePath) { }
 
-    public override void DirDel(Dir dir, bool IsRecursion = true)
-    {
-        throw new NotImplementedException();
-    }
+    public override void DirDel(Dir dir, bool IsRecursion = true) { }
 }
 
-public class FileDirOpForUnpack(string srcCompressedPath, string dstRootPath) : FileDirOpStra
+public class FileDirOpForUnpack(string srcRootPath, string dstRootPath, string syncId)
+    : FileDirOpStra
 {
     /// <summary>
     /// 解压缩,必须首先调用
     /// </summary>
     public void FirstUnComparess()
     {
-        var x = SrcCompressedPath;
+        string zipFilePath = $"{SrcRootPath}/{SyncId}.zip";
+
+        using (ZipInputStream s = new ZipInputStream(System.IO.File.OpenRead(zipFilePath)))
+        {
+            s.Password = "VSXsdf.123d7802zw@#4_";
+            ZipEntry theEntry;
+            while ((theEntry = s.GetNextEntry()) != null)
+            {
+                Console.WriteLine(theEntry.Name);
+
+                string directoryName =
+                    DstRootPath + $"/{SyncId}/" + Path.GetDirectoryName(theEntry.Name)
+                    ?? throw new NullReferenceException("无法得到父文件目录！");
+                string fileName = Path.GetFileName(theEntry.Name);
+
+                // create directory
+                if (directoryName.Length > 0)
+                {
+                    Directory.CreateDirectory(directoryName);
+                }
+
+                if (fileName != String.Empty)
+                {
+                    using (
+                        FileStream streamWriter = System.IO.File.Create(
+                            directoryName + "/" + fileName
+                        )
+                    )
+                    {
+                        int size = 2048;
+                        byte[] data = new byte[2048];
+                        while (true)
+                        {
+                            size = s.Read(data, 0, data.Length);
+                            if (size > 0)
+                            {
+                                streamWriter.Write(data, 0, size);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    public readonly string SyncId = syncId;
 
     /// <summary>
     /// 目标根目录
@@ -126,7 +237,7 @@ public class FileDirOpForUnpack(string srcCompressedPath, string dstRootPath) : 
     /// <summary>
     /// 源目录
     /// </summary>
-    public readonly string SrcCompressedPath = srcCompressedPath;
+    public readonly string SrcRootPath = srcRootPath;
 
     /// <summary>
     /// 最终完成时的压缩
