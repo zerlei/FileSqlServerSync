@@ -1,3 +1,4 @@
+using System.Net.NetworkInformation;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,6 +28,19 @@ namespace LocalServer.Controllers
             {
                 HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
             }
+        }
+
+        [Route("/macaddr")]
+        public string GetMacAddress()
+        {
+            NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+            string macaddrs = "";
+            foreach (NetworkInterface nic in nics)
+            {
+                PhysicalAddress physicalAddress = nic.GetPhysicalAddress();
+                macaddrs += physicalAddress.ToString() + ";";
+            }
+            return macaddrs;
         }
         //TODO 是否在本地记载同步日志？
     }
