@@ -4,19 +4,29 @@ namespace LocalServer;
 
 public class LocalSyncServerFactory
 {
-    public void CreateLocalSyncServer(WebSocket socket, string name)
+    private readonly object Lock = new();
+
+    public async void CreateLocalSyncServer(WebSocket socket, string name)
     {
         if (Servers.Select(x => x.Name == name).Any())
         {
             throw new Exception("there already is a server with that name is Runing!");
         }
-        Servers.Add(new LocalSyncServer(socket, name, this));
+        var server = new LocalSyncServer(socket, name, this);
+        lock (Lock)
+        {
+            Servers.Add(server);
+        }
+        await server.Start();
     }
 
     private readonly List<LocalSyncServer> Servers = [];
 
     public void RemoveLocalSyncServer(LocalSyncServer server)
     {
-        Servers.Remove(server);
+        lock (Lock)
+        {
+            Servers.Remove(server);
+        }
     }
 }
