@@ -11,7 +11,7 @@ public class DirFileOpTest : IDisposable
 
     public void Dispose()
     {
-        filesSeed.Dispose();
+        //filesSeed.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -71,5 +71,20 @@ public class DirFileOpTest : IDisposable
         filesSeed.OldDir.ResetRootPath("OldDir", "NewDir");
         // Console.WriteLine(filesSeed.OldDir.Path);
         Assert.True(filesSeed.OldDir.IsEqual(filesSeed.NewDir), "合并结果不一致！");
+    }
+
+    [Fact]
+    public void Tt()
+    {
+        filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
+        var c = new FileDirOpForPack(filesSeed.NewDir.FormatedPath, filesSeed.TestPath + "/");
+        c.FinallyCompress();
+
+        var d = new FileDirOpForUnpack(
+            filesSeed.TestPath + "/",
+            filesSeed.TestPath + "/",
+            c.SyncId
+        );
+        d.FirstUnComparess();
     }
 }

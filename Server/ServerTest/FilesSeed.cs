@@ -176,7 +176,7 @@ public class FilesSeed : IDisposable
         fileDirOp = new SimpleFileDirOp();
     }
 
-    private readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
+    public readonly string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
     public Dir NewDir;
     public Dir OldDir;
     public Dir DiffDir;

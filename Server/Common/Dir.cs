@@ -465,7 +465,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     {
         var ldir = this;
         var rdir = other;
-        Dir? cDir = new Dir(rdir.FormatedPath);
+        Dir? cDir = new(rdir.FormatedPath);
         //分别对文件和文件夹分组
         List<File> lFiles = [];
         List<File> rFiles = [];
