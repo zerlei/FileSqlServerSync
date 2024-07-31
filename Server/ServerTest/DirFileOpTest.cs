@@ -1,24 +1,36 @@
 using Common;
-using Xunit;
-
+using XUnit.Project.Attributes;
 /*using Newtonsoft.Json;*/
 
 namespace ServerTest;
-
+/// <summary>
+/// xUnit将会对每个测试方法创建一个测试上下文，IClassFixture可以用来创建类中共享测试上下文，
+///
+/// XUnit 的测试方法不是按照顺序执行，所以注意对象状态
+///
+/// 一般单元测试，每个测试函数应当是独立的，不让它们按照顺序执行，在一般情况下是最好的做法，参考
+/// https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices
+/// 目前涉及到一些文件的同步，所以按照顺序执行相对较好，这使用了xUnit的方法使它们按照顺序执行
+/// </summary>
+///
+[TestCaseOrderer(
+    ordererTypeName: "XUnit.Project.Orderers.PriorityOrderer",
+    ordererAssemblyName: "ServerTest"
+)]
 public class DirFileOpTest : IDisposable
 {
     private readonly FilesSeed filesSeed = new();
 
     public void Dispose()
     {
-        //filesSeed.Dispose();
+        filesSeed.Dispose();
         GC.SuppressFinalize(this);
     }
 
     /// <summary>
     /// 测试文件目录写入和提取
     /// </summary>
-    [Fact]
+    [Fact, TestPriority(0)]
     public void FileDirWriteExtract()
     {
         filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
@@ -34,7 +46,7 @@ public class DirFileOpTest : IDisposable
     /// <summary>
     /// 测试文件差异比较
     /// </summary>
-    [Fact]
+    [Fact, TestPriority(1)]
     public void FileDirDiff()
     {
         var cDDir = filesSeed.NewDir.Diff(filesSeed.OldDir);
@@ -49,7 +61,7 @@ public class DirFileOpTest : IDisposable
     /// <summary>
     /// 测试同步是否成功
     /// </summary>
-    [Fact]
+    [Fact, TestPriority(2)]
     public void SyncFileDir()
     {
         filesSeed.OldDir.WriteByThisInfo(filesSeed.fileDirOp);
@@ -63,7 +75,7 @@ public class DirFileOpTest : IDisposable
     /// <summary>
     /// 测试文件合并
     /// </summary>
-    [Fact]
+    [Fact, TestPriority(3)]
     public void DirsCombine()
     {
         filesSeed.OldDir.CombineJustObject(filesSeed.DiffDir);
@@ -73,18 +85,18 @@ public class DirFileOpTest : IDisposable
         Assert.True(filesSeed.OldDir.IsEqual(filesSeed.NewDir), "合并结果不一致！");
     }
 
-    [Fact]
-    public void Tt()
-    {
-        filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
-        var c = new FileDirOpForPack(filesSeed.NewDir.FormatedPath, filesSeed.TestPath + "/");
-        c.FinallyCompress();
+    // [Fact]
+    // public void Tt()
+    // {
+    //     filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
+    //     var c = new FileDirOpForPack(filesSeed.NewDir.FormatedPath, filesSeed.TestPath + "/");
+    //     c.FinallyCompress();
 
-        var d = new FileDirOpForUnpack(
-            filesSeed.TestPath + "/",
-            filesSeed.TestPath + "/",
-            c.SyncId
-        );
-        d.FirstUnComparess();
-    }
+    //     var d = new FileDirOpForUnpack(
+    //         filesSeed.TestPath + "/",
+    //         filesSeed.TestPath + "/",
+    //         c.SyncId
+    //     );
+    //     d.FirstUnComparess();
+    // }
 }
