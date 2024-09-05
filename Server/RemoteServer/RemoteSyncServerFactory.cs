@@ -1,8 +1,8 @@
 using System.Net.WebSockets;
 
-namespace LocalServer;
+namespace RemoteServer;
 
-public class LocalSyncServerFactory
+public class RemoteSyncServerFactory
 {
     private readonly object Lock = new();
 
@@ -10,22 +10,22 @@ public class LocalSyncServerFactory
     {
         if (Servers.Select(x => x.Name == name).Any())
         {
-            throw new Exception("LocalServer:存在同名发布源！");
+            throw new Exception("RemoteServer:存在同名发布源！");
         }
-        var server = new LocalSyncServer(socket, name, this);
+        var server = new RemoteSyncServer(socket, name, this);
         lock (Lock)
         {
             Servers.Add(server);
         }
         //脱离当前函数栈
         Task.Run(async ()=>{
-            await server.LocalSocketListen();
+            await server.RemoteSocketListen();
         });
     }
 
-    private readonly List<LocalSyncServer> Servers = [];
+    private readonly List<RemoteSyncServer> Servers = [];
 
-    public void RemoveLocalSyncServer(LocalSyncServer server)
+    public void RemoveLocalSyncServer(RemoteSyncServer server)
     {
         lock (Lock)
         {

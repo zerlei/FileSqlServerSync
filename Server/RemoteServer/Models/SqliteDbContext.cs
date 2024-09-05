@@ -2,14 +2,9 @@
 
 namespace RemoteServer.Models;
 
-public class SqliteDbContext : DbContext
+public class SqliteDbContext(IConfiguration configuration) : DbContext
 {
-    protected readonly IConfiguration Configuration;
-
-    public SqliteDbContext(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+    protected readonly IConfiguration Configuration = configuration;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

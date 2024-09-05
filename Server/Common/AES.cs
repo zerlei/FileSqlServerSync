@@ -1,7 +1,4 @@
-using System;
-using System.IO;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Common;
 
@@ -94,7 +91,7 @@ public class AESHelper
         return encrypted;
     }
 
-   public static string DecryptStringFromBytes_Aes(byte[] cipherText)
+    public static string DecryptStringFromBytes_Aes(byte[] cipherText)
     {
         // Check arguments.
         if (cipherText == null || cipherText.Length <= 0)
