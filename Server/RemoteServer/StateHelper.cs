@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using Common;
 
-namespace LocalServer;
+namespace RemoteServer;
 
 // enum StateWhenMsg
 // {

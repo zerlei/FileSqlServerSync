@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RemoteServer.Models;
 
-using RemoteServer;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -22,8 +21,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseWebSockets();
 app.Urls.Clear();
-app.Urls.Add("http://0.0.0.0:6888");
+app.Urls.Add("http://0.0.0.0:6828");
 app.MapControllers();
 
 app.Run();

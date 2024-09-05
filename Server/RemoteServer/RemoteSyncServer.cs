@@ -1,16 +1,17 @@
+
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Common;
 
-namespace LocalServer;
+namespace RemoteServer;
 
-public class LocalSyncServer
+public class RemoteSyncServer
 {
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static string TempRootFile = "C:/TempPack";
 #pragma warning restore CA2211 // Non-constant fields should not be visible
-    public StateHelpBase StateHelper;
+    // public StateHelpBase StateHelper;
 
     public Config? SyncConfig;
 
@@ -23,19 +24,15 @@ public class LocalSyncServer
     }}
 
     /// <summary>
-    /// 发布源连接
+    /// remote server
     /// </summary>
-    public readonly WebSocket LocalSocket;
+    public readonly WebSocket RemoteSocket;
 
     /// <summary>
     /// 发布源-缓冲区，存储数据 最大1MB
     /// </summary>
-    // public byte[] Buffer = new byte[1024 * 1024];
+    public byte[] Buffer = new byte[1024 * 1024];
 
-    /// <summary>
-    /// 发布目标-连接
-    /// </summary>
-    public readonly ClientWebSocket RemoteSocket = new();
 
     /// <summary>
     /// 发布开始时间
@@ -50,66 +47,18 @@ public class LocalSyncServer
     /// <summary>
     /// 父工程，用于释放资源
     /// </summary>
-    public readonly LocalSyncServerFactory Factory;
+    public readonly RemoteSyncServerFactory Factory;
 
-    public LocalSyncServer(WebSocket socket, string name, LocalSyncServerFactory factory)
+    public RemoteSyncServer(WebSocket socket, string name, RemoteSyncServerFactory factory)
     {
-        LocalSocket = socket;
+        RemoteSocket = socket;
         Name = name;
         Factory = factory;
-        StateHelper = new ConnectAuthorityHelper(this);
+        // StateHelper = new ConnectAuthorityHelper(this);
     }
 
-    public async Task RemoteSocketConnect()
-    {
-        if (SyncConfig != null)
-        {
-            await RemoteSocket.ConnectAsync(
-                new Uri(SyncConfig.RemoteUrl + "/websoc"),
-                CancellationToken.None
-            );
-        }
-        else
-        {
-            throw new ArgumentException("SyncConfig is null!");
-        }
-    }
 
-    public async Task RemoteSocketLiten()
-    {
-        string CloseMsg = "任务结束关闭";
-        try
-        {
-            while (RemoteSocket.State == WebSocketState.Open)
-            {
-                var buffer = new byte[1024 * 1024];
-                var receiveResult = await RemoteSocket.ReceiveAsync(
-                    new ArraySegment<byte>(buffer),
-                    CancellationToken.None
-                );
-                if (receiveResult.MessageType == WebSocketMessageType.Close)
-                {
-                    Close(receiveResult.CloseStatusDescription);
-                }
-                else
-                {
-                    var nbuffer = new byte[receiveResult.Count];
-                    System.Buffer.BlockCopy(buffer, 0, nbuffer, 0, receiveResult.Count);
-                    StateHelper.ReceiveRemoteMsg(nbuffer);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            CloseMsg = e.Message;
-        }
-        finally
-        {
-            Close(CloseMsg);
-        }
-    }
-
-    public async Task LocalSocketListen()
+    public async Task RemoteSocketListen()
     {
         string CloseMsg = "任务结束关闭";
         try
@@ -117,9 +66,9 @@ public class LocalSyncServer
             //最大1MB!=
             var buffer = new byte[1024 * 1024];
 
-            while (LocalSocket.State == WebSocketState.Open)
+            while (RemoteSocket.State == WebSocketState.Open)
             {
-                var receiveResult = await LocalSocket.ReceiveAsync(
+                var receiveResult = await RemoteSocket.ReceiveAsync(
                     new ArraySegment<byte>(buffer),
                     CancellationToken.None
                 );
@@ -130,9 +79,9 @@ public class LocalSyncServer
                 }
                 else
                 {
-                    StateHelper.ReceiveLocalMsg(
-                        Encoding.UTF8.GetString(buffer, 0, receiveResult.Count)
-                    );
+                    // StateHelper.ReceiveLocalMsg(
+                    //     Encoding.UTF8.GetString(buffer, 0, receiveResult.Count)
+                    // );
                 }
             }
         }
@@ -146,16 +95,16 @@ public class LocalSyncServer
         }
     }
 
-    public async Task LocalSocketSendMsg(object msgOb)
-    {
-        string msg = JsonSerializer.Serialize(msgOb);
-        await LocalSocket.SendAsync(
-            new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)),
-            WebSocketMessageType.Text,
-            true,
-            CancellationToken.None
-        );
-    }
+    // public async Task LocalSocketSendMsg(object msgOb)
+    // {
+    //     string msg = JsonSerializer.Serialize(msgOb);
+    //     await RemoteSocket.SendAsync(
+    //         new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)),
+    //         WebSocketMessageType.Text,
+    //         true,
+    //         CancellationToken.None
+    //     );
+    // }
 
     public async Task RemoteSocketSendMsg(object msgOb)
     {
@@ -173,9 +122,9 @@ public class LocalSyncServer
     {
         try
         {
-            if (LocalSocket.State == WebSocketState.Open)
+            if (RemoteSocket.State == WebSocketState.Open)
             {
-                LocalSocket
+                RemoteSocket
                     .CloseAsync(
                         WebSocketCloseStatus.NormalClosure,
                         CloseReason,

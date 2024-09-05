@@ -309,11 +309,27 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     }
 
     /// <summary>
-    /// 从文件目录结构提起文件信息，注意，此目录文件树不包含文件内容，仅有修改时间mtime
+    /// 从文件夹中提取信息
     /// </summary>
-    /// <returns></returns>
-    public void ExtractInfo()
+    /// <param name="cherryPicks">绝对路径,只包含的文件或者目录</param>
+    /// <param name="exculdes">绝对路径，排除的文件或目录</param>
+    /// <exception cref="NotSupportedException"></exception>
+    public void ExtractInfo(List<string>? cherryPicks = null, List<string>? exculdes = null)
     {
+        bool filter(string path)
+        {
+            if (cherryPicks != null)
+            {
+                return cherryPicks.Contains(path);
+            }
+
+            if (exculdes != null)
+            {
+                return !exculdes.Contains(path);
+            }
+            return true;
+        }
+
         if (this.Children.Count != 0)
         {
             throw new NotSupportedException("this dir is not empty.");
@@ -322,13 +338,19 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
         string[] dirs = Directory.GetDirectories(this.FormatedPath);
         foreach (var file in files)
         {
-            this.Children.Add(new File(file, System.IO.File.GetLastWriteTime($"{file}")));
+            if (filter(file))
+            {
+                this.Children.Add(new File(file, System.IO.File.GetLastWriteTime($"{file}")));
+            }
         }
         foreach (var dir in dirs)
         {
-            var ndir = new Dir(dir);
-            ndir.ExtractInfo();
-            this.Children.Add(ndir);
+            if (filter(dir))
+            {
+                var ndir = new Dir(dir);
+                ndir.ExtractInfo();
+                this.Children.Add(ndir);
+            }
         }
     }
 

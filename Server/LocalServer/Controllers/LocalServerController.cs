@@ -8,7 +8,7 @@ namespace LocalServer.Controllers
     {
         private readonly LocalSyncServerFactory Factory = factory;
 
-        [Route("/")]
+        [Route("/websoc")]
         public async Task WebsocketConnection(string Name)
         {
             if (HttpContext.WebSockets.IsWebSocketRequest)
