@@ -1,7 +1,8 @@
 using System.Net.NetworkInformation;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
-
+using Common;
+using System.Net.WebSockets;
 namespace LocalServer.Controllers
 {
     public class LocalServerController(LocalSyncServerFactory factory) : ControllerBase
@@ -16,7 +17,8 @@ namespace LocalServer.Controllers
                 try
                 {
                     var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                    Factory.CreateLocalSyncServer(webSocket, Name);
+                    var pipeLine = new WebSocPipeLine<WebSocket>(webSocket);
+                    Factory.CreateLocalSyncServer(pipeLine, Name);
                 }
                 catch (Exception e)
                 {

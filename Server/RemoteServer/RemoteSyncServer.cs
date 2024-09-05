@@ -1,6 +1,4 @@
-
 using System.Net.WebSockets;
-using System.Text;
 using System.Text.Json;
 using Common;
 
@@ -27,12 +25,6 @@ public class RemoteSyncServer
     /// remote server
     /// </summary>
     public readonly WebSocket RemoteSocket;
-
-    /// <summary>
-    /// 发布源-缓冲区，存储数据 最大1MB
-    /// </summary>
-    public byte[] Buffer = new byte[1024 * 1024];
-
 
     /// <summary>
     /// 发布开始时间
@@ -94,17 +86,6 @@ public class RemoteSyncServer
             Close(CloseMsg);
         }
     }
-
-    // public async Task LocalSocketSendMsg(object msgOb)
-    // {
-    //     string msg = JsonSerializer.Serialize(msgOb);
-    //     await RemoteSocket.SendAsync(
-    //         new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)),
-    //         WebSocketMessageType.Text,
-    //         true,
-    //         CancellationToken.None
-    //     );
-    // }
 
     public async Task RemoteSocketSendMsg(object msgOb)
     {

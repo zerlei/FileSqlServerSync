@@ -14,34 +14,26 @@ public class LocalSyncServer
 
     public Config? SyncConfig;
 
-    public Config NotNullSyncConfig {get {
-        if (SyncConfig == null)
+    public Config NotNullSyncConfig
+    {
+        get
         {
-            throw new ArgumentNullException("SyncConfig");
+            if (SyncConfig == null)
+            {
+                throw new ArgumentNullException("SyncConfig");
+            }
+            return SyncConfig;
         }
-        return SyncConfig;
-    }}
+    }
 
     /// <summary>
     /// 发布源连接
     /// </summary>
-    public readonly WebSocket LocalSocket;
+    public readonly AbsPipeLine LocalPipe;
 
-    /// <summary>
-    /// 发布源-缓冲区，存储数据 最大1MB
-    /// </summary>
-    // public byte[] Buffer = new byte[1024 * 1024];
-
-    /// <summary>
-    /// 发布目标-连接
-    /// </summary>
-    public readonly ClientWebSocket RemoteSocket = new();
-
-    /// <summary>
-    /// 发布开始时间
-    /// </summary>
-    private readonly DateTime StartTime = DateTime.Now;
-
+    public readonly AbsPipeLine RemotePipe = new WebSocPipeLine<ClientWebSocket>(
+        new ClientWebSocket()
+    );
     /// <summary>
     /// 发布名称
     /// </summary>
@@ -52,148 +44,39 @@ public class LocalSyncServer
     /// </summary>
     public readonly LocalSyncServerFactory Factory;
 
-    public LocalSyncServer(WebSocket socket, string name, LocalSyncServerFactory factory)
+    public LocalSyncServer(AbsPipeLine pipe, string name, LocalSyncServerFactory factory)
     {
-        LocalSocket = socket;
+        LocalPipe = pipe;
         Name = name;
         Factory = factory;
         StateHelper = new ConnectAuthorityHelper(this);
-    }
 
-    public async Task RemoteSocketConnect()
-    {
-        if (SyncConfig != null)
+        Task.Run(async () =>
         {
-            await RemoteSocket.ConnectAsync(
-                new Uri(SyncConfig.RemoteUrl + "/websoc"),
-                CancellationToken.None
+            var rs = LocalPipe.Work(
+                (byte[] b) =>
+                {
+                    return StateHelper.ReceiveLocalMsg(b);
+                }
             );
-        }
-        else
-        {
-            throw new ArgumentException("SyncConfig is null!");
-        }
-    }
-
-    public async Task RemoteSocketLiten()
-    {
-        string CloseMsg = "任务结束关闭";
-        try
-        {
-            while (RemoteSocket.State == WebSocketState.Open)
+            try
             {
-                var buffer = new byte[1024 * 1024];
-                var receiveResult = await RemoteSocket.ReceiveAsync(
-                    new ArraySegment<byte>(buffer),
-                    CancellationToken.None
-                );
-                if (receiveResult.MessageType == WebSocketMessageType.Close)
-                {
-                    Close(receiveResult.CloseStatusDescription);
-                }
-                else
-                {
-                    var nbuffer = new byte[receiveResult.Count];
-                    System.Buffer.BlockCopy(buffer, 0, nbuffer, 0, receiveResult.Count);
-                    StateHelper.ReceiveRemoteMsg(nbuffer);
-                }
+                await foreach (var r in rs) { }
             }
-        }
-        catch (Exception e)
-        {
-            CloseMsg = e.Message;
-        }
-        finally
-        {
-            Close(CloseMsg);
-        }
-    }
-
-    public async Task LocalSocketListen()
-    {
-        string CloseMsg = "任务结束关闭";
-        try
-        {
-            //最大1MB!=
-            var buffer = new byte[1024 * 1024];
-
-            while (LocalSocket.State == WebSocketState.Open)
+            catch (Exception e)
             {
-                var receiveResult = await LocalSocket.ReceiveAsync(
-                    new ArraySegment<byte>(buffer),
-                    CancellationToken.None
-                );
-
-                if (receiveResult.MessageType == WebSocketMessageType.Close)
-                {
-                    Close(receiveResult.CloseStatusDescription);
-                }
-                else
-                {
-                    StateHelper.ReceiveLocalMsg(
-                        Encoding.UTF8.GetString(buffer, 0, receiveResult.Count)
-                    );
-                }
+                Close(e.Message);
             }
-        }
-        catch (Exception e)
-        {
-            CloseMsg = e.Message;
-        }
-        finally
-        {
-            Close(CloseMsg);
-        }
+        });
     }
 
-    public async Task LocalSocketSendMsg(object msgOb)
-    {
-        string msg = JsonSerializer.Serialize(msgOb);
-        await LocalSocket.SendAsync(
-            new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)),
-            WebSocketMessageType.Text,
-            true,
-            CancellationToken.None
-        );
-    }
-
-    public async Task RemoteSocketSendMsg(object msgOb)
-    {
-        string msg = JsonSerializer.Serialize(msgOb);
-        var buffer = AESHelper.EncryptStringToBytes_Aes(msg);
-        await RemoteSocket.SendAsync(
-            buffer,
-            WebSocketMessageType.Text,
-            true,
-            CancellationToken.None
-        );
-    }
 
     public void Close(string? CloseReason)
     {
         try
         {
-            if (LocalSocket.State == WebSocketState.Open)
-            {
-                LocalSocket
-                    .CloseAsync(
-                        WebSocketCloseStatus.NormalClosure,
-                        CloseReason,
-                        CancellationToken.None
-                    )
-                    .Wait(60 * 1000);
-            }
-
-            if (RemoteSocket.State == WebSocketState.Open)
-            {
-                RemoteSocket
-                    .CloseAsync(
-                        WebSocketCloseStatus.NormalClosure,
-                        CloseReason,
-                        CancellationToken.None
-                    )
-                    .Wait(60 * 1000);
-            }
+            LocalPipe.Close(CloseReason);
+            RemotePipe.Close(CloseReason);
         }
         catch (Exception e)
         {

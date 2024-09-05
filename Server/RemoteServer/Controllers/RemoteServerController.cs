@@ -1,10 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
 using RemoteServer.Models;
+using System.Text;
 namespace RemoteServer.Controllers;
 
-public class SyncFilesController(SqliteDbContext db) : ControllerBase
+public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContext db) : ControllerBase
 {
     private readonly SqliteDbContext _db = db;
+    private readonly RemoteSyncServerFactory Factory = factory;
+
+        [Route("/websoc")]
+        public async Task WebsocketConnection(string Name)
+        {
+            if (HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                try
+                {
+                    var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                    Factory.CreateLocalSyncServer(webSocket, Name);
+                }
+                catch (Exception e)
+                {
+                    HttpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(e.Message));
+                    HttpContext.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+                }
+            }
+            else
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        }
 
     [HttpGet("/GetSyncFilesLogs")]
     public IActionResult GetSyncFilesLogs(
