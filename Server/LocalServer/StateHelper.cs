@@ -32,7 +32,7 @@ public abstract class StateHelpBase(
         return new SyncMsg(type, Step, body);
     }
 
-    public void ReceiveLocalMsg(string msg)
+    public bool ReceiveLocalMsg(byte[] msg)
     {
         var syncMsg =
             JsonSerializer.Deserialize<SyncMsg>(msg)
@@ -42,9 +42,10 @@ public abstract class StateHelpBase(
             throw new Exception("Sync step error!");
         }
         HandleLocalMsg(syncMsg);
+        return true;
     }
 
-    public void ReceiveRemoteMsg(byte[] bytes)
+    public bool ReceiveRemoteMsg(byte[] bytes)
     {
         var msg = AESHelper.DecryptStringFromBytes_Aes(bytes);
 
@@ -56,6 +57,7 @@ public abstract class StateHelpBase(
             throw new Exception("Sync step error!");
         }
         HandleLocalMsg(syncMsg);
+        return true;
     }
 
     protected abstract void HandleRemoteMsg(SyncMsg msg);
@@ -74,7 +76,7 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
     protected override void HandleRemoteMsg(SyncMsg msg)
     {
         //将remote的消息传递到前端界面
-        Context.LocalSocketSendMsg(msg).Wait();
+        Context.LocalPipe.SendMsg(msg);
         //下一步
         var deployHelper = new DeployHelper(Context);
         Context.StateHelper = deployHelper;
@@ -86,18 +88,24 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
         //收到配置文件
         var config = JsonSerializer.Deserialize<Config>(msg.Body);
         Context.SyncConfig = config;
-        Context.RemoteSocketConnect().Wait(60 * 1000);
         Task.Run(async () =>
         {
-            if (Context.SyncConfig != null)
+            var rs = Context.RemotePipe.Work(
+                (byte[] b) =>
+                {
+                    return Context.StateHelper.ReceiveRemoteMsg(b);
+                },
+                Context.NotNullSyncConfig.RemoteUrl + "/websoc"
+            );
+            await foreach (var r in rs)
             {
-                await Context.RemoteSocketSendMsg(CreateMsg(Context.SyncConfig.RemotePwd));
+                if (r == 0)
+                {
+                    await Context.RemotePipe.SendMsg(
+                        CreateMsg(Context.NotNullSyncConfig.RemotePwd)
+                    );
+                }
             }
-            else
-            {
-                throw new NullReferenceException("Config is null!");
-            }
-            await Context.RemoteSocketLiten();
         });
     }
 }
@@ -113,7 +121,7 @@ public class DeployHelper(LocalSyncServer context)
     {
         if (Context.NotNullSyncConfig.IsDeployProject == false)
         {
-            Context.LocalSocketSendMsg(CreateMsg("配置为不发布跳过此步骤")).Wait();
+            Context.LocalPipe.SendMsg(CreateMsg("配置为不发布跳过此步骤")).Wait();
             var h = new DiffFileAndPackHelper(Context);
             Context.StateHelper = h;
             h.DiffProcess();
@@ -145,14 +153,14 @@ public class DeployHelper(LocalSyncServer context)
 
                 if (process.ExitCode == 0)
                 {
-                    Context.LocalSocketSendMsg(CreateMsg("发布成功！")).Wait();
+                    Context.LocalPipe.SendMsg(CreateMsg("发布成功！")).Wait();
                     var h = new DiffFileAndPackHelper(Context);
                     Context.StateHelper = h;
                     h.DiffProcess();
                 }
                 else
                 {
-                    Context.LocalSocketSendMsg(CreateErrMsg(output)).Wait();
+                    Context.LocalPipe.SendMsg(CreateErrMsg(output)).Wait();
                     throw new Exception("执行发布错误，错误信息参考上一条消息！");
                 }
             }
@@ -181,17 +189,13 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
         });
         //将配置信息发送到remoteServer
         Context
-            .RemoteSocketSendMsg(CreateMsg(JsonSerializer.Serialize(Context.NotNullSyncConfig)))
+            .RemotePipe.SendMsg(CreateMsg(JsonSerializer.Serialize(Context.NotNullSyncConfig)))
             .Wait();
     }
 
     protected override void HandleLocalMsg(SyncMsg msg) { }
 
-    protected override void HandleRemoteMsg(SyncMsg msg) { 
-
-
-
-    }
+    protected override void HandleRemoteMsg(SyncMsg msg) { }
 }
 
 // /// <summary>

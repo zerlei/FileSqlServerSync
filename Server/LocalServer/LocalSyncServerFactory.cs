@@ -1,26 +1,22 @@
 using System.Net.WebSockets;
-
+using Common;
 namespace LocalServer;
 
 public class LocalSyncServerFactory
 {
     private readonly object Lock = new();
 
-    public  void CreateLocalSyncServer(WebSocket socket, string name)
+    public  void CreateLocalSyncServer(AbsPipeLine pipeLine, string name)
     {
         if (Servers.Select(x => x.Name == name).Any())
         {
             throw new Exception("LocalServer:存在同名发布源！");
         }
-        var server = new LocalSyncServer(socket, name, this);
+        var server = new LocalSyncServer(pipeLine, name, this);
         lock (Lock)
         {
             Servers.Add(server);
         }
-        //脱离当前函数栈
-        Task.Run(async ()=>{
-            await server.LocalSocketListen();
-        });
     }
 
     private readonly List<LocalSyncServer> Servers = [];
