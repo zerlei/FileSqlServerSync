@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Common;
 
-public abstract class AbsPipeLine
+public abstract class AbsPipeLine(bool isAES)
 {
     public abstract IAsyncEnumerable<int> Work(Func<byte[], bool> receiveCb, string addr = "");
     protected Func<byte[], bool> ReceiveMsg = (byte[] a) =>
@@ -26,17 +26,16 @@ public abstract class AbsPipeLine
     /// <param name="msg"></param>
     /// <returns></returns>
     public abstract Task SendMsg(SyncMsg msg);
+
+    protected readonly bool IsAES = isAES;
 }
 
-public class WebSocPipeLine<TSocket>(TSocket socket) : AbsPipeLine
+public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(isAES)
     where TSocket : WebSocket
 {
     public readonly TSocket Socket = socket;
 
-    public override async IAsyncEnumerable<int> Work(
-        Func<byte[], bool> receiveCb,
-        string addr = ""
-    )
+    public override async IAsyncEnumerable<int> Work(Func<byte[], bool> receiveCb, string addr = "")
     {
         if (Socket is ClientWebSocket CSocket)
         {
@@ -94,7 +93,9 @@ public class WebSocPipeLine<TSocket>(TSocket socket) : AbsPipeLine
     {
         string msgStr = JsonSerializer.Serialize(msg);
         await Socket.SendAsync(
-            new ArraySegment<byte>(Encoding.UTF8.GetBytes(msgStr)),
+            IsAES
+                ? AESHelper.EncryptStringToBytes_Aes(msgStr)
+                : new ArraySegment<byte>(Encoding.UTF8.GetBytes(msgStr)),
             WebSocketMessageType.Text,
             true,
             CancellationToken.None

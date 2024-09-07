@@ -1,34 +1,46 @@
+using System.Net.WebSockets;
+using System.Text;
+using Common;
 using Microsoft.AspNetCore.Mvc;
 using RemoteServer.Models;
-using System.Text;
+
 namespace RemoteServer.Controllers;
 
-public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContext db) : ControllerBase
+public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContext db)
+    : ControllerBase
 {
     private readonly SqliteDbContext _db = db;
     private readonly RemoteSyncServerFactory Factory = factory;
 
-        [Route("/websoc")]
-        public async Task WebsocketConnection(string Name)
+    [Route("/websoc")]
+    public async Task WebsocketConnection(string Name)
+    {
+        if (HttpContext.WebSockets.IsWebSocketRequest)
         {
-            if (HttpContext.WebSockets.IsWebSocketRequest)
+            try
             {
-                try
+                if (Factory.GetServerByName(Name) == null)
                 {
                     var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                    Factory.CreateLocalSyncServer(webSocket, Name);
+                    var pipeLine = new WebSocPipeLine<WebSocket>(webSocket,true);
+                    Factory.CreateRemoteSyncServer(pipeLine, Name);
                 }
-                catch (Exception e)
+                else
                 {
-                    HttpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(e.Message));
-                    HttpContext.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+                    throw new Exception("RemoteServer: 存在相同名称的发布正在进行!");
                 }
             }
-            else
+            catch (Exception e)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                HttpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(e.Message));
+                HttpContext.Response.StatusCode = StatusCodes.Status406NotAcceptable;
             }
         }
+        else
+        {
+            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        }
+    }
 
     [HttpGet("/GetSyncFilesLogs")]
     public IActionResult GetSyncFilesLogs(

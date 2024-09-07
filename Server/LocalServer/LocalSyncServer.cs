@@ -1,6 +1,4 @@
 using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
 using Common;
 
 namespace LocalServer;
@@ -26,30 +24,27 @@ public class LocalSyncServer
         }
     }
 
+    public string Name;
+
     /// <summary>
     /// 发布源连接
     /// </summary>
     public readonly AbsPipeLine LocalPipe;
 
     public readonly AbsPipeLine RemotePipe = new WebSocPipeLine<ClientWebSocket>(
-        new ClientWebSocket()
+        new ClientWebSocket(),false
     );
-    /// <summary>
-    /// 发布名称
-    /// </summary>
-    public readonly string Name;
-
     /// <summary>
     /// 父工程，用于释放资源
     /// </summary>
     public readonly LocalSyncServerFactory Factory;
 
-    public LocalSyncServer(AbsPipeLine pipe, string name, LocalSyncServerFactory factory)
+    public LocalSyncServer(AbsPipeLine pipe, LocalSyncServerFactory factory,string name)
     {
         LocalPipe = pipe;
-        Name = name;
         Factory = factory;
         StateHelper = new ConnectAuthorityHelper(this);
+        Name = name;
 
         Task.Run(async () =>
         {
