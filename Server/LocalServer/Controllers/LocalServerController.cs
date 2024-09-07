@@ -1,8 +1,9 @@
 using System.Net.NetworkInformation;
-using System.Text;
-using Microsoft.AspNetCore.Mvc;
-using Common;
 using System.Net.WebSockets;
+using System.Text;
+using Common;
+using Microsoft.AspNetCore.Mvc;
+
 namespace LocalServer.Controllers
 {
     public class LocalServerController(LocalSyncServerFactory factory) : ControllerBase
@@ -16,9 +17,16 @@ namespace LocalServer.Controllers
             {
                 try
                 {
-                    var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                    var pipeLine = new WebSocPipeLine<WebSocket>(webSocket);
-                    Factory.CreateLocalSyncServer(pipeLine, Name);
+                    if (Factory.GetServerByName(Name) == null)
+                    {
+                        var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                        var pipeLine = new WebSocPipeLine<WebSocket>(webSocket,false);
+                        Factory.CreateLocalSyncServer(pipeLine, Name);
+                    }
+                    else
+                    {
+                        throw new Exception("LocalServer: 已经存在同名的发布正在进行!");
+                    }
                 }
                 catch (Exception e)
                 {

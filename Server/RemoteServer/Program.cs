@@ -9,14 +9,10 @@ ConfigurationBuilder configurationBuilder = new();
 // Add services to the container.
 
 //添加配置文件路径
-configurationBuilder
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json");
-
-//加载文件
-IConfiguration _configuration = configurationBuilder.Build();
-RemoteSyncServer.TempRootFile = _configuration["TempDir"] ?? "C:/TempPack";
-;
+RemoteSyncServerFactory.NamePwd = [.. (
+    builder.Configuration.GetSection("NamePwds").Get<Tuple<string, string>[]>() ?? []
+)];
+RemoteSyncServer.TempRootFile = builder.Configuration["TempDir"] ?? "C:/TempPack";
 builder.Services.AddControllers();
 builder.Services.AddDbContext<SqliteDbContext>(opions =>
 {
@@ -26,6 +22,7 @@ builder.Services.AddDbContext<SqliteDbContext>(opions =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<RemoteSyncServerFactory>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

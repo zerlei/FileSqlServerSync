@@ -1,4 +1,4 @@
-using System.Net.WebSockets;
+using Common;
 
 namespace RemoteServer;
 
@@ -6,30 +6,35 @@ public class RemoteSyncServerFactory
 {
     private readonly object Lock = new();
 
-    public  void CreateLocalSyncServer(WebSocket socket, string name)
+#pragma warning disable CA2211 // Non-constant fields should not be visible
+    public static List<Tuple<string, string>> NamePwd = [];
+#pragma warning restore CA2211 // Non-constant fields should not be visible
+
+    public void CreateRemoteSyncServer(AbsPipeLine pipeLine, string Name)
     {
-        if (Servers.Select(x => x.Name == name).Any())
-        {
-            throw new Exception("RemoteServer:存在同名发布源！");
-        }
-        var server = new RemoteSyncServer(socket, name, this);
+        var pwd =
+            NamePwd.Where(x => x.Item1 == Name).FirstOrDefault()
+            ?? throw new Exception("RemoteServer: 不被允许的发布名称！");
+        var server = new RemoteSyncServer(pipeLine, this, Name, pwd.Item2);
         lock (Lock)
         {
             Servers.Add(server);
         }
-        //脱离当前函数栈
-        Task.Run(async ()=>{
-            await server.RemoteSocketListen();
-        });
     }
 
     private readonly List<RemoteSyncServer> Servers = [];
 
-    public void RemoveLocalSyncServer(RemoteSyncServer server)
+    public void RemoveSyncServer(RemoteSyncServer server)
     {
         lock (Lock)
         {
             Servers.Remove(server);
         }
+    }
+
+    public RemoteSyncServer? GetServerByName(string name)
+    {
+        var it = Servers.Where(x => x.Name == name).FirstOrDefault();
+        return it;
     }
 }

@@ -13,7 +13,7 @@ public enum SyncProcessStep
     DeployProject = 2,
     DiffFileAndPack = 3,
     PackSqlServer = 4,
-    Upload = 5,
+    UploadAndUnpack = 5,
     Publish = 6
 }
 public class SyncMsg(SyncMsgType msgType, SyncProcessStep step,  string body)

@@ -1,4 +1,3 @@
-using System.Net.WebSockets;
 using Common;
 namespace LocalServer;
 
@@ -6,13 +5,9 @@ public class LocalSyncServerFactory
 {
     private readonly object Lock = new();
 
-    public  void CreateLocalSyncServer(AbsPipeLine pipeLine, string name)
+    public  void CreateLocalSyncServer(AbsPipeLine pipeLine,string name)
     {
-        if (Servers.Select(x => x.Name == name).Any())
-        {
-            throw new Exception("LocalServer:存在同名发布源！");
-        }
-        var server = new LocalSyncServer(pipeLine, name, this);
+        var server = new LocalSyncServer(pipeLine, this,name);
         lock (Lock)
         {
             Servers.Add(server);
@@ -27,5 +22,11 @@ public class LocalSyncServerFactory
         {
             Servers.Remove(server);
         }
+    }
+
+    public LocalSyncServer? GetServerByName(string name)
+    {
+        var it = Servers.Where(x=>x.Name== name).FirstOrDefault();
+        return it;
     }
 }

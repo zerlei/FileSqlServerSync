@@ -56,7 +56,7 @@ public abstract class StateHelpBase(
         {
             throw new Exception("Sync step error!");
         }
-        HandleLocalMsg(syncMsg);
+        HandleRemoteMsg(syncMsg);
         return true;
     }
 
@@ -95,7 +95,7 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
                 {
                     return Context.StateHelper.ReceiveRemoteMsg(b);
                 },
-                Context.NotNullSyncConfig.RemoteUrl + "/websoc"
+                Context.NotNullSyncConfig.RemoteUrl + "/websoc?Name=" + Context.Name
             );
             await foreach (var r in rs)
             {
@@ -135,7 +135,7 @@ public class DeployHelper(LocalSyncServer context)
                     {
                         FileName = "cmd.exe", // The command to execute (can be any command line tool)
                         Arguments =
-                            $"msdeploy.exe -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
+                            $" msdeploy.exe -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
                         UseShellExecute = false, // Do not use the shell to execute the command
@@ -184,8 +184,8 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
         //提取本地文件的信息
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-            e.LocalDirInfo = new Dir(Context.NotNullSyncConfig.LocalRootPath + e.DirPath);
-            e.LocalDirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
+            e.DirInfo = new Dir(Context.NotNullSyncConfig.LocalRootPath + e.DirPath);
+            e.DirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
         });
         //将配置信息发送到remoteServer
         Context
@@ -195,7 +195,22 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
 
     protected override void HandleLocalMsg(SyncMsg msg) { }
 
-    protected override void HandleRemoteMsg(SyncMsg msg) { }
+    protected override void HandleRemoteMsg(SyncMsg msg)
+    {
+        Context.NotNullSyncConfig.DirFileConfigs =
+            JsonSerializer.Deserialize<List<DirFileConfig>>(msg.Body)
+            ?? throw new Exception("LocalServer: DirFile为空！");
+
+        var PackOp = new FileDirOpForPack(
+            Context.NotNullSyncConfig.LocalRootPath,
+            Context.NotNullSyncConfig.RemoteRootPath
+                + "/"
+                + Context.NotNullSyncConfig.Id.ToString(),
+            Context.NotNullSyncConfig.Id.ToString()
+        );
+
+        
+    }
 }
 
 // /// <summary>
