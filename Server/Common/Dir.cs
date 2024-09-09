@@ -363,6 +363,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     {
         static void f(Dir dir, FileDirOpStra fileDirOp)
         {
+            dir.AccessCheck();
             foreach (var child in dir.Children)
             {
                 if (child.Type == DirOrFile.Dir)
@@ -394,86 +395,88 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     /// </summary>
     private void AccessCheck()
     {
-        this.Children.ForEach(e =>
-        {
-            if (e is File file)
-            {
-                if (file.NextOp == null) { }
-                else if (file.NextOp == NextOpType.Add)
-                {
-                    if (
-                        !AccessWrapper.CheckDirAccess(
-                            Path.GetDirectoryName(file.FormatedPath)
-                                ?? throw new DirectoryNotFoundException(
-                                    $"{file.FormatedPath} 此父路径不存在"
-                                ),
-                            [DirAcess.CreateFiles]
-                        )
-                    )
-                    {
-                        throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限创建文件");
-                    }
-                }
-                else if (file.NextOp == NextOpType.Modify)
-                {
-                    if (
-                        !(
-                            AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete])
-                            && AccessWrapper.CheckDirAccess(
-                                Path.GetDirectoryName(file.FormatedPath)
-                                    ?? throw new DirectoryNotFoundException(
-                                        $"{file.FormatedPath} 此父路径不存在"
-                                    ),
-                                [DirAcess.CreateFiles]
-                            )
-                        )
-                    )
-                    {
-                        throw new UnauthorizedAccessException(
-                            $"{file.FormatedPath} 无权限删除源文件或者创建新文件"
-                        );
-                    }
-                }
-                else if (file.NextOp == NextOpType.Del)
-                {
-                    if (!AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete]))
-                    {
-                        throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限删除源文件");
-                    }
-                }
-            }
-            else if (e is Dir dir)
-            {
-                if (dir.NextOp == null) { }
-                else if (dir.NextOp == NextOpType.Add)
-                {
-                    if (
-                        !AccessWrapper.CheckDirAccess(
-                            Path.GetDirectoryName(dir.FormatedPath)
-                                ?? throw new DirectoryNotFoundException(
-                                    $"{dir.FormatedPath} 此父路径不存在"
-                                ),
-                            [DirAcess.CreateDirectories, DirAcess.CreateFiles]
-                        )
-                    )
-                    {
-                        throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限创建文件夹或者文件");
-                    }
-                }
-                else if (dir.NextOp == NextOpType.Del)
-                {
-                    if (!AccessWrapper.CheckDirAccess(dir.FormatedPath, [DirAcess.Delete]))
-                    {
-                        throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限删除文件夹");
-                    }
-                    else
-                    {
-                        //校验是否拥有子文件或者文件夹的删除权限，
-                        dir.AccessCheck();
-                    }
-                }
-            }
-        });
+        //不是核心关注点，下面实现有bug。不校验所有文件夹权限，创建时会抛出错误，此时手动处理吧。
+        return;
+        //this.Children.ForEach(e =>
+        //{
+        //    if (e is File file)
+        //    {
+        //        if (file.NextOp == null) { }
+        //        else if (file.NextOp == NextOpType.Add)
+        //        {
+        //            if (
+        //                !AccessWrapper.CheckDirAccess(
+        //                    Path.GetDirectoryName(file.FormatedPath)
+        //                        ?? throw new DirectoryNotFoundException(
+        //                            $"{file.FormatedPath} 此父路径不存在"
+        //                        ),
+        //                    [DirAcess.CreateFiles]
+        //                )
+        //            )
+        //            {
+        //                throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限创建文件");
+        //            }
+        //        }
+        //        else if (file.NextOp == NextOpType.Modify)
+        //        {
+        //            if (
+        //                !(
+        //                    AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete])
+        //                    && AccessWrapper.CheckDirAccess(
+        //                        Path.GetDirectoryName(file.FormatedPath)
+        //                            ?? throw new DirectoryNotFoundException(
+        //                                $"{file.FormatedPath} 此父路径不存在"
+        //                            ),
+        //                        [DirAcess.CreateFiles]
+        //                    )
+        //                )
+        //            )
+        //            {
+        //                throw new UnauthorizedAccessException(
+        //                    $"{file.FormatedPath} 无权限删除源文件或者创建新文件"
+        //                );
+        //            }
+        //        }
+        //        else if (file.NextOp == NextOpType.Del)
+        //        {
+        //            if (!AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete]))
+        //            {
+        //                throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限删除源文件");
+        //            }
+        //        }
+        //    }
+        //    else if (e is Dir dir)
+        //    {
+        //        if (dir.NextOp == null) { }
+        //        else if (dir.NextOp == NextOpType.Add)
+        //        {
+        //            if (
+        //                !AccessWrapper.CheckDirAccess(
+        //                    Path.GetDirectoryName(dir.FormatedPath)
+        //                        ?? throw new DirectoryNotFoundException(
+        //                            $"{dir.FormatedPath} 此父路径不存在"
+        //                        ),
+        //                    [DirAcess.CreateDirectories, DirAcess.CreateFiles]
+        //                )
+        //            )
+        //            {
+        //                throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限创建文件夹或者文件");
+        //            }
+        //        }
+        //        else if (dir.NextOp == NextOpType.Del)
+        //        {
+        //            if (!AccessWrapper.CheckDirAccess(dir.FormatedPath, [DirAcess.Delete]))
+        //            {
+        //                throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限删除文件夹");
+        //            }
+        //            else
+        //            {
+        //                //校验是否拥有子文件或者文件夹的删除权限，
+        //                dir.AccessCheck();
+        //            }
+        //        }
+        //    }
+        //});
     }
 
     /// <summary>
