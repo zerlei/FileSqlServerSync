@@ -27,7 +27,7 @@ public abstract class FileDirOpStra
 /// 文件目录打包
 /// </summary>
 /// <param name="dstRootPath"></param>
-public class FileDirOpForPack(string srcRootPath, string dstRootPath, string syncId = "")
+public class FileDirOpForPack(string srcRootPath, string dstRootPath)
     : FileDirOpStra
 {
     /// <summary>
@@ -40,14 +40,10 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath, string syn
     /// </summary>
     public readonly string SrcRootPath = srcRootPath;
 
-    public readonly string SyncId = string.IsNullOrEmpty(syncId)
-        ? Guid.NewGuid().ToString()
-        : syncId;
-
     /// <summary>
     /// 最终完成时的压缩
     /// </summary>
-    public void FinallyCompress()
+    public static void FinallyCompress(string dstPath, string Id)
     {
         static List<string> GetFilesResus(string dirPath)
         {
@@ -65,9 +61,9 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath, string syn
             }
             return files;
         }
-        var fileNames = GetFilesResus(SrcRootPath);
-        var OuptPutFile = Path.GetDirectoryName(DstRootPath) + $"/{SyncId}.zip";
-        using FileStream fsOut = new(OuptPutFile, FileMode.Create);
+        var fileNames = GetFilesResus(dstPath);
+        var OuptPutFile = Path.GetDirectoryName(dstPath) + $"/{Id}.zip";
+        using FileStream fsOut = new(OuptPutFile, System.IO.FileMode.Create);
         using ZipOutputStream zipStream = new(fsOut);
         {
             zipStream.SetLevel(9); // 设置压缩级别
@@ -78,7 +74,7 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath, string syn
             {
                 // Using GetFileName makes the result compatible with XP
                 // as the resulting path is not absolute.
-                var entry = new ZipEntry(file.Replace(SrcRootPath, ""));
+                var entry = new ZipEntry(file.Replace(dstPath, ""));
 
                 // Setup the entry data as required.
 
@@ -170,15 +166,15 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath, string syn
     public override void DirDel(Dir dir, bool IsRecursion = true) { }
 }
 
-public class FileDirOpForUnpack(string srcRootPath, string dstRootPath, string syncId)
+public class FileDirOpForUnpack(string srcRootPath, string dstRootPath)
     : FileDirOpStra
 {
     /// <summary>
     /// 解压缩,必须首先调用
     /// </summary>
-    public void FirstUnComparess()
+    public static void FirstUnComparess(string dstPath, string Id)
     {
-        string zipFilePath = $"{SrcRootPath}/{SyncId}.zip";
+        string zipFilePath = $"{dstPath}/{Id}.zip";
 
         using (ZipInputStream s = new ZipInputStream(System.IO.File.OpenRead(zipFilePath)))
         {
@@ -189,7 +185,7 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath, string s
                 Console.WriteLine(theEntry.Name);
 
                 string directoryName =
-                    DstRootPath + $"/{SyncId}/" + Path.GetDirectoryName(theEntry.Name)
+                    dstPath + $"/{Id}/" + Path.GetDirectoryName(theEntry.Name)
                     ?? throw new NullReferenceException("无法得到父文件目录！");
                 string fileName = Path.GetFileName(theEntry.Name);
 
@@ -198,7 +194,6 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath, string s
                 {
                     Directory.CreateDirectory(directoryName);
                 }
-
                 if (fileName != String.Empty)
                 {
                     using (
@@ -227,8 +222,6 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath, string s
         }
     }
 
-    public readonly string SyncId = syncId;
-
     /// <summary>
     /// 目标根目录
     /// </summary>
@@ -244,27 +237,57 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath, string s
     /// </summary>
     public override void FileCreate(string absolutePath, DateTime mtime)
     {
-        throw new NotImplementedException();
+        var srcPath = absolutePath.Replace(DstRootPath, SrcRootPath);
+
+        var dstDirPath =
+            Path.GetDirectoryName(absolutePath) ?? throw new NullReferenceException("父路径不存在！");
+        if (!Directory.Exists(dstDirPath))
+        {
+            Directory.CreateDirectory(dstDirPath);
+        }
+
+        //文件时间不会更改
+        System.IO.File.Copy(srcPath, absolutePath, true);
     }
 
     public override void DirCreate(Dir dir, bool IsRecursion = true)
     {
-        throw new NotImplementedException();
+        // var srcPath = dir.FormatedPath.Replace(DstRootPath, SrcRootPath);
+        var dstDirPath =
+            Path.GetDirectoryName(dir.FormatedPath) ?? throw new NullReferenceException("父路径不存在！");
+        if (!Directory.Exists(dstDirPath))
+        {
+            Directory.CreateDirectory(dstDirPath);
+        }
+        if (IsRecursion)
+        {
+            foreach (var c in dir.Children)
+            {
+                if (c is Dir d)
+                {
+                    this.DirCreate(d, true);
+                }
+                else if (c is File f)
+                {
+                    this.FileCreate(f.FormatedPath, f.MTime);
+                }
+            }
+        }
     }
 
     public override void FileModify(string absolutePath, DateTime mtime)
     {
-        throw new NotImplementedException();
+        this.FileCreate(absolutePath,mtime);
     }
 
     public override void FileDel(string absolutePath)
     {
-        throw new NotImplementedException();
+        System.IO.File.Delete(absolutePath);
     }
 
     public override void DirDel(Dir dir, bool IsRecursion = true)
     {
-        throw new NotImplementedException();
+        System.IO.Directory.Delete(dir.FormatedPath,IsRecursion);
     }
 }
 

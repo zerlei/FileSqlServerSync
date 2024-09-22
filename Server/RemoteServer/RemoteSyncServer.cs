@@ -12,6 +12,7 @@ public class RemoteSyncServer
     public StateHelpBase StateHelper;
 
     public Config? SyncConfig;
+    public List<DirFileConfig> Diff = [];
 
     public Config NotNullSyncConfig
     {

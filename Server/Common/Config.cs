@@ -16,7 +16,38 @@ public class DirFileConfig
     /// 除此外全部忽略，最高优先级，若有值，ExcludeFiles 将被忽略，它是根目录的相对路径
     /// </summary>
     public List<string>? CherryPicks { get; set; }
+
+    ///
     public Dir? DirInfo { get; set; }
+}
+
+public class MSSqlConfig
+{
+    /// <summary>
+    /// 数据库地址
+    /// </summary>
+    public required string ServerName { get; set; }
+    /// <summary>
+    /// db名称
+    /// </summary>
+    public required string DatebaseName { get; set; }
+    /// <summary>
+    /// 用户
+    /// </summary>
+    public required string User { get; set; }
+    /// <summary>
+    /// 密码
+    /// </summary>
+    public required string Password { get; set; }
+    /// <summary>
+    /// 通常是：True
+    /// </summary>
+    public required string TrustServerCertificate { get; set; }
+
+    /// <summary>
+    /// 同步数据的表格 ！！！ 通常是 dbo.TableName !!! 注意dbo.
+    /// </summary>
+    public List<string>? SyncTablesData{get;set;}
 }
 
 public class Config
@@ -44,19 +75,14 @@ public class Config
     public required bool IsDeployDb { get; set; }
 
     /// <summary>
-    /// 源数据库连接字符串(ip地址相对LocalServer)
+    /// 源数据库连接(ip地址相对LocalServer)
     /// </summary>
-    public required string SrcDbConnection { get; set; }
+    public required MSSqlConfig SrcDb { get; set; }
 
     /// <summary>
-    /// 目标数据库连接字符串(ip地址相对RemoteServer)
+    /// 目标数据库(ip地址相对RemoteServer)
     /// </summary>
-    public required string DstDbConnection { get; set; }
-
-    /// <summary>
-    /// 同步的表
-    /// </summary>
-    public required List<string>? SyncDataTables { get; set; }
+    public required MSSqlConfig DstDb { get; set; }
 
     /// <summary>
     /// 是否发布项目

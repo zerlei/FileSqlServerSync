@@ -37,4 +37,9 @@ public class RemoteSyncServerFactory
         var it = Servers.Where(x => x.Name == name).FirstOrDefault();
         return it;
     }
+
+    public RemoteSyncServer? GetServerById(string Id)
+    {
+        return Servers.Where(x => x.NotNullSyncConfig.Id.ToString() == Id).FirstOrDefault();
+    }
 }

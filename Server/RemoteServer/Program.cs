@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Validations;
 using RemoteServer;
 using RemoteServer.Models;
 
@@ -9,9 +10,10 @@ ConfigurationBuilder configurationBuilder = new();
 // Add services to the container.
 
 //添加配置文件路径
-RemoteSyncServerFactory.NamePwd = [.. (
-    builder.Configuration.GetSection("NamePwds").Get<Tuple<string, string>[]>() ?? []
-)];
+RemoteSyncServerFactory.NamePwd =
+[
+    .. (builder.Configuration.GetSection("NamePwds").Get<Tuple<string, string>[]>() ?? [])
+];
 RemoteSyncServer.TempRootFile = builder.Configuration["TempDir"] ?? "C:/TempPack";
 builder.Services.AddControllers();
 builder.Services.AddDbContext<SqliteDbContext>(opions =>
@@ -35,5 +37,4 @@ app.UseWebSockets();
 app.Urls.Clear();
 app.Urls.Add("http://0.0.0.0:6818");
 app.MapControllers();
-
 app.Run();

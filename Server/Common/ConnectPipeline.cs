@@ -27,6 +27,7 @@ public abstract class AbsPipeLine(bool isAES)
     /// <returns></returns>
     public abstract Task SendMsg(SyncMsg msg);
 
+    public abstract Task UploadFile(string filePath, string url, Func<double, bool> progressCb);
     protected readonly bool IsAES = isAES;
 }
 
@@ -34,6 +35,37 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
     where TSocket : WebSocket
 {
     public readonly TSocket Socket = socket;
+
+    public override async Task UploadFile(
+        string filePath,
+        string url,
+        Func<double, bool> progressCb
+    )
+    {
+        if (Socket is HttpClient)
+        {
+            using var client = new HttpClient();
+            using var content = new MultipartFormDataContent();
+            using var fileStream = new FileStream(filePath, FileMode.Open);
+            var progress = new Progress<double>(
+                (current) =>
+                {
+                    progressCb(current);
+                }
+            );
+            var fileContent = new ProgressStreamContent(fileStream, progress);
+            content.Add(fileContent, "file", Path.GetFileName(filePath));
+            var it = await client.PostAsync(url, content);
+            if (it.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new Exception(it.Content.ReadAsStringAsync().Result);
+            }
+        }
+        else
+        {
+            throw new NotSupportedException("只支持HttpClient!");
+        }
+    }
 
     public override async IAsyncEnumerable<int> Work(Func<byte[], bool> receiveCb, string addr = "")
     {

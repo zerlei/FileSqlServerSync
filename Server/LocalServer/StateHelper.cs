@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Common;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LocalServer;
 
@@ -203,16 +204,163 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
 
         var PackOp = new FileDirOpForPack(
             Context.NotNullSyncConfig.LocalRootPath,
-            Context.NotNullSyncConfig.RemoteRootPath
-                + "/"
-                + Context.NotNullSyncConfig.Id.ToString(),
+            LocalSyncServer.TempRootFile + "/" + Context.NotNullSyncConfig.Id.ToString(),
             Context.NotNullSyncConfig.Id.ToString()
         );
-
-        
+        Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
+        {
+            if (e.DirInfo != null)
+            {
+                e.DirInfo.ResetRootPath(
+                    Context.NotNullSyncConfig.RemoteRootPath,
+                    Context.NotNullSyncConfig.LocalRootPath
+                );
+                e.DirInfo.WriteByThisInfo(PackOp);
+            }
+        });
+        var n = new DeployMSSqlHelper(Context);
+        n.PackSqlServerProcess();
+        Context.StateHelper = n;
     }
 }
 
+public class DeployMSSqlHelper(LocalSyncServer context)
+    : StateHelpBase(context, SyncProcessStep.PackSqlServer)
+{
+    private void PackAndSwitchNext()
+    {
+        FileDirOpForPack.FinallyCompress(
+            LocalSyncServer.TempRootFile + "/" + Context.NotNullSyncConfig.Id.ToString(),
+            Context.NotNullSyncConfig.Id.ToString()
+        );
+        var h = new UploadPackedHelper(Context);
+        Context.StateHelper = h;
+        h.UpLoadPackedFile();
+    }
+
+    public void PackSqlServerProcess()
+    {
+        if (Context.NotNullSyncConfig.IsDeployDb == false)
+        {
+            Context.LocalPipe.SendMsg(CreateMsg("配置为不发布数据库跳过此步骤")).Wait();
+            PackAndSwitchNext();
+        }
+        else
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var arguments =
+                    $"SqlPackage /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac "
+                    + $"/DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log "
+                    + $"/p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
+                    + $"/SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User} "
+                    + $"/SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate} "
+                    + $"/p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True ";
+                if (Context.NotNullSyncConfig.SrcDb.SyncTablesData != null)
+                {
+                    foreach (var t in Context.NotNullSyncConfig.SrcDb.SyncTablesData)
+                    {
+                        arguments += $" /p:TableData={t}";
+                    }
+                }
+
+                ProcessStartInfo startInfo =
+                    new()
+                    {
+                        FileName = "cmd.exe", // The command to execute (can be any command line tool)
+                        Arguments = arguments,
+                        // The arguments to pass to the command (e.g., list directory contents)
+                        RedirectStandardOutput = true, // Redirect the standard output to a string
+                        UseShellExecute = false, // Do not use the shell to execute the command
+                        CreateNoWindow = true // Do not create a new window for the command
+                    };
+                using Process process = new() { StartInfo = startInfo };
+                // Start the process
+                process.Start();
+
+                // Read the output from the process
+                string output = process.StandardOutput.ReadToEnd();
+
+                // Wait for the process to exit
+                process.WaitForExit();
+
+                if (process.ExitCode == 0)
+                {
+                    Context.LocalPipe.SendMsg(CreateMsg("数据库打包成功！")).Wait();
+                    PackAndSwitchNext();
+                }
+                else
+                {
+                    Context.LocalPipe.SendMsg(CreateErrMsg(output)).Wait();
+                    throw new Exception("执行发布错误，错误信息参考上一条消息！");
+                }
+            }
+            else
+            {
+                throw new NotSupportedException("只支持windows!");
+            }
+        }
+    }
+
+    protected override void HandleLocalMsg(SyncMsg msg) { }
+
+    protected override void HandleRemoteMsg(SyncMsg msg)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class UploadPackedHelper(LocalSyncServer context)
+    : StateHelpBase(context, SyncProcessStep.UploadAndUnpack)
+{
+    public void UpLoadPackedFile()
+    {
+        Context
+            .LocalPipe.UploadFile(
+                Context.NotNullSyncConfig.RemoteUrl + "/UploadPacked",
+                $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.zip",
+                (double current) =>
+                {
+                    Context
+                        .LocalPipe.SendMsg(CreateMsg(current.ToString(), SyncMsgType.Process))
+                        .Wait();
+                    return true;
+                }
+            )
+            .Wait();
+        Context.LocalPipe.SendMsg(CreateMsg("上传完成！")).Wait();
+    }
+
+    protected override void HandleLocalMsg(SyncMsg msg)
+    {
+        throw new NotImplementedException();
+    }
+
+    protected override void HandleRemoteMsg(SyncMsg msg)
+    {
+        Context.LocalPipe.SendMsg(msg).Wait();
+        var h = new FinallyPublishHelper(Context);
+        Context.StateHelper = h;
+    }
+}
+
+public class FinallyPublishHelper(LocalSyncServer context)
+    : StateHelpBase(context, SyncProcessStep.Publish)
+{
+    protected override void HandleLocalMsg(SyncMsg msg)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// 由最初始的客户端断开连接，表示发布完成。
+    /// </summary>
+    /// <param name="msg"></param>
+    protected override void HandleRemoteMsg(SyncMsg msg)
+    {
+        Context.LocalPipe.SendMsg(msg).Wait();
+    }
+}
 // /// <summary>
 // /// 0. 发布源验证密码
 // /// </summary>

@@ -22,7 +22,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
                 if (Factory.GetServerByName(Name) == null)
                 {
                     var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                    var pipeLine = new WebSocPipeLine<WebSocket>(webSocket,true);
+                    var pipeLine = new WebSocPipeLine<WebSocket>(webSocket, true);
                     Factory.CreateRemoteSyncServer(pipeLine, Name);
                 }
                 else
@@ -159,6 +159,46 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
         catch (Exception e)
         {
             return Ok(new { IsSuccess = false, e.Message });
+        }
+    }
+
+    [HttpPost("/UploadFile")]
+    public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string Id)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new Exception("文件不存在！");
+            }
+            var uploadPath = Path.Combine(RemoteSyncServer.TempRootFile, Id);
+            if (!Directory.Exists(uploadPath))
+                Directory.CreateDirectory(uploadPath);
+            var filePath = Path.Combine(uploadPath, file.FileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            var server = Factory.GetServerById(Id);
+            if (server == null)
+            {
+                throw new Exception("不存在的Id！");
+            }
+            else
+            {
+                var h = new UnPackAndReleaseHelper(server);
+                server.StateHelper = h;
+                h.UnPack();
+            }
+
+            return Ok(new { IsSuccess = true, Message = "File uploaded successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                500,
+                new { IsSuccess = false, Message = $"Internal server error: {ex.Message}" }
+            );
         }
     }
 }
