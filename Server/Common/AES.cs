@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 
 namespace Common;
 
-
 /// <summary>
 /// 与目标服务器通信将会加密
 /// </summary>
@@ -55,7 +54,7 @@ public class AESHelper
         0xB6,
     ];
 
-    public static byte[] EncryptStringToBytes_Aes(string plainText)
+    public static byte[] EncryptStringToBytes_Aes(byte[] plainText)
     {
         // Check arguments.
         if (plainText == null || plainText.Length <= 0)
@@ -74,11 +73,7 @@ public class AESHelper
 
             // Create the streams used for encryption.
             using MemoryStream msEncrypt = new();
-            using CryptoStream csEncrypt = new(
-                    msEncrypt,
-                    encryptor,
-                    CryptoStreamMode.Write
-                );
+            using CryptoStream csEncrypt = new(msEncrypt, encryptor, CryptoStreamMode.Write);
             using (StreamWriter swEncrypt = new(csEncrypt))
             {
                 //Write all data to the stream.

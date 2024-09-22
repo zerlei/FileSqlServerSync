@@ -126,7 +126,7 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
         string msgStr = JsonSerializer.Serialize(msg);
         await Socket.SendAsync(
             IsAES
-                ? AESHelper.EncryptStringToBytes_Aes(msgStr)
+                ? AESHelper.EncryptStringToBytes_Aes(Encoding.UTF8.GetBytes(msgStr))
                 : new ArraySegment<byte>(Encoding.UTF8.GetBytes(msgStr)),
             WebSocketMessageType.Text,
             true,
