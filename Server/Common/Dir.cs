@@ -60,7 +60,7 @@ public class Dir(string path, List<AFileOrDir>? children = null, NextOpType? nex
     }
 
     /// <summary>
-    /// clone
+    /// clone,不克隆文件
     /// </summary>
     /// <param name="optype"></param>
     /// <param name="IsResetNextOpType"></param>
