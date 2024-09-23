@@ -185,8 +185,8 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
         //提取本地文件的信息
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-            e.DirInfo = new Dir(Context.NotNullSyncConfig.LocalRootPath + e.DirPath);
-            e.DirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
+            e.LocalDirInfo = new Dir(Context.NotNullSyncConfig.LocalRootPath + e.DirPath);
+            e.LocalDirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
         });
         //将配置信息发送到remoteServer
         Context
@@ -198,24 +198,28 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
 
     protected override void HandleRemoteMsg(SyncMsg msg)
     {
-        Context.NotNullSyncConfig.DirFileConfigs =
+        var diffConfig =
             JsonSerializer.Deserialize<List<DirFileConfig>>(msg.Body)
             ?? throw new Exception("LocalServer: DirFile为空！");
 
+        for (var i = 0; i < diffConfig.Count; ++i)
+        {
+            Context.NotNullSyncConfig.DirFileConfigs[i].DiffDirInfo = diffConfig[i].DiffDirInfo;
+        }
+
         var PackOp = new FileDirOpForPack(
             Context.NotNullSyncConfig.LocalRootPath,
-            LocalSyncServer.TempRootFile + "/" + Context.NotNullSyncConfig.Id.ToString(),
-            Context.NotNullSyncConfig.Id.ToString()
+            LocalSyncServer.TempRootFile + "/" + Context.NotNullSyncConfig.Id.ToString()
         );
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-            if (e.DirInfo != null)
+            if (e.DiffDirInfo!= null)
             {
-                e.DirInfo.ResetRootPath(
+                e.DiffDirInfo.ResetRootPath(
                     Context.NotNullSyncConfig.RemoteRootPath,
                     Context.NotNullSyncConfig.LocalRootPath
                 );
-                e.DirInfo.WriteByThisInfo(PackOp);
+                e.DiffDirInfo.WriteByThisInfo(PackOp);
             }
         });
         var n = new DeployMSSqlHelper(Context);

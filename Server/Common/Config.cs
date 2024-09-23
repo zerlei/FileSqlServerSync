@@ -18,7 +18,9 @@ public class DirFileConfig
     public List<string>? CherryPicks { get; set; }
 
     ///
-    public Dir? DirInfo { get; set; }
+    public Dir? LocalDirInfo { get; set; }
+    public Dir? DiffDirInfo{ get; set; }
+    public Dir? RemoteDirInfo{ get; set; }
 }
 
 public class MSSqlConfig
