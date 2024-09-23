@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using Common;
 
@@ -24,12 +25,22 @@ public abstract class StateHelpBase(
 
     public SyncMsg CreateErrMsg(string Body)
     {
-        return new SyncMsg(SyncMsgType.Error, Step, Body);
+        return new SyncMsg
+        {
+            Body = Body,
+            Step = Step,
+            Type = SyncMsgType.Error
+        };
     }
 
     public SyncMsg CreateMsg(string body, SyncMsgType type = SyncMsgType.General)
     {
-        return new SyncMsg(type, Step, body);
+        return new SyncMsg
+        {
+            Body = body,
+            Step = Step,
+            Type = type
+        };
     }
 
     public bool ReceiveLocalMsg(byte[] msg)
@@ -47,7 +58,7 @@ public abstract class StateHelpBase(
 
     public bool ReceiveRemoteMsg(byte[] bytes)
     {
-        var msg = AESHelper.DecryptStringFromBytes_Aes(bytes);
+        var msg = Encoding.UTF8.GetString(bytes);
 
         var syncMsg =
             JsonSerializer.Deserialize<SyncMsg>(msg)
@@ -90,21 +101,28 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
         Context.SyncConfig = config;
         Task.Run(async () =>
         {
-            var rs = Context.RemotePipe.Work(
-                (byte[] b) =>
-                {
-                    return Context.StateHelper.ReceiveRemoteMsg(b);
-                },
-                Context.NotNullSyncConfig.RemoteUrl + "/websoc?Name=" + Context.Name
-            );
-            await foreach (var r in rs)
+            try
             {
-                if (r == 0)
+                var rs = Context.RemotePipe.Work(
+                    (byte[] b) =>
+                    {
+                        return Context.StateHelper.ReceiveRemoteMsg(b);
+                    },
+                    Context.NotNullSyncConfig.RemoteUrl + "/websoc?Name=" + Context.Name
+                );
+                await foreach (var r in rs)
                 {
-                    await Context.RemotePipe.SendMsg(
-                        CreateMsg(Context.NotNullSyncConfig.RemotePwd)
-                    );
+                    if (r == 0)
+                    {
+                        await Context.RemotePipe.SendMsg(
+                            CreateMsg(Context.NotNullSyncConfig.RemotePwd)
+                        );
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                await Context.LocalPipe.Close(e.Message);
             }
         });
     }
@@ -133,9 +151,9 @@ public class DeployHelper(LocalSyncServer context)
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "cmd.exe", // The command to execute (can be any command line tool)
+                        FileName = "msdeploy", // The command to execute (can be any command line tool)
                         Arguments =
-                            $" msdeploy.exe -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
+                            $" -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
                         UseShellExecute = false, // Do not use the shell to execute the command
@@ -212,7 +230,7 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
         );
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-            if (e.DiffDirInfo!= null)
+            if (e.DiffDirInfo != null)
             {
                 e.DiffDirInfo.ResetRootPath(
                     Context.NotNullSyncConfig.RemoteRootPath,
@@ -253,7 +271,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var arguments =
-                    $"SqlPackage /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac "
+                    $" /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac "
                     + $"/DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log "
                     + $"/p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
                     + $"/SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User} "
@@ -270,7 +288,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "cmd.exe", // The command to execute (can be any command line tool)
+                        FileName = "SqlPackage", // The command to execute (can be any command line tool)
                         Arguments = arguments,
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
@@ -320,7 +338,7 @@ public class UploadPackedHelper(LocalSyncServer context)
     {
         Context
             .LocalPipe.UploadFile(
-                Context.NotNullSyncConfig.RemoteUrl ,
+                Context.NotNullSyncConfig.RemoteUrl,
                 $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.zip",
                 (double current) =>
                 {

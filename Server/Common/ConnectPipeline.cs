@@ -104,7 +104,15 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
             {
                 var nbuffer = new byte[receiveResult.Count];
                 System.Buffer.BlockCopy(buffer, 0, nbuffer, 0, receiveResult.Count);
-                receiveCb(nbuffer);
+                if (IsAES)
+                {
+                    var nnbuffer = AESHelper.DecryptStringFromBytes_Aes(buffer);
+                    receiveCb(Encoding.UTF8.GetBytes(nnbuffer));
+                }
+                else
+                {
+                    receiveCb(nbuffer);
+                }
             }
         }
     }
@@ -126,7 +134,7 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
         string msgStr = JsonSerializer.Serialize(msg);
         await Socket.SendAsync(
             IsAES
-                ? AESHelper.EncryptStringToBytes_Aes(Encoding.UTF8.GetBytes(msgStr))
+                ? AESHelper.EncryptStringToBytes_Aes(msgStr)
                 : new ArraySegment<byte>(Encoding.UTF8.GetBytes(msgStr)),
             WebSocketMessageType.Text,
             true,

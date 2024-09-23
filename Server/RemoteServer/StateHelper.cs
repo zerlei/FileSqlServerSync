@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using Common;
 
@@ -24,17 +25,27 @@ public abstract class StateHelpBase(
 
     public SyncMsg CreateErrMsg(string Body)
     {
-        return new SyncMsg(SyncMsgType.Error, Step, Body);
+        return new SyncMsg
+        {
+            Body = Body,
+            Type = SyncMsgType.Error,
+            Step = Step
+        };
     }
 
     public SyncMsg CreateMsg(string body, SyncMsgType type = SyncMsgType.General)
     {
-        return new SyncMsg(type, Step, body);
+        return new SyncMsg
+        {
+            Body = body,
+            Type = type,
+            Step = Step
+        };
     }
 
     public bool ReceiveMsg(byte[] bytes)
     {
-        var msg = AESHelper.DecryptStringFromBytes_Aes(bytes);
+        var msg = Encoding.UTF8.GetString(bytes);
 
         var syncMsg =
             JsonSerializer.Deserialize<SyncMsg>(msg)
@@ -61,6 +72,8 @@ public class ConnectAuthorityHelper(RemoteSyncServer context)
     {
         if (msg.Body == Context.Pwd)
         {
+            var h = new DiffFileHelper(Context);
+            Context.StateHelper = h;
             Context.Pipe.SendMsg(CreateMsg("RemoteServer: 密码验证成功！"));
         }
         else
@@ -100,6 +113,8 @@ public class DiffFileHelper(RemoteSyncServer context)
                 );
             }
         });
+        var h = new UnPackAndReleaseHelper(Context);
+        Context.StateHelper = h;
         //将对比结果发送到Local
         Context.Pipe.SendMsg(CreateMsg(JsonSerializer.Serialize(diffConfigs)));
     }
@@ -134,14 +149,14 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var arguments =
-                    $"SqlPackage /Action:Publish  /SourceFile: {RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac "
+                    $"/Action:Publish  /SourceFile: {RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac "
                     + $"/TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
                     + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True ";
 
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "cmd.exe", // The command to execute (can be any command line tool)
+                        FileName = "SqlPackage", // The command to execute (can be any command line tool)
                         Arguments = arguments,
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string

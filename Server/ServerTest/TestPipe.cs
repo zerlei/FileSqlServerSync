@@ -1,15 +1,18 @@
 ﻿using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 using Common;
 
 namespace ServerTest
 {
-    public class TestPipe(bool isAES) : AbsPipeLine(isAES)
+    public class TestPipe(bool isAES, string id) : AbsPipeLine(isAES)
     {
         private readonly BlockingCollection<Func<byte[]>> EventQueue =
             new BlockingCollection<Func<byte[]>>();
         private readonly CancellationTokenSource Cts = new CancellationTokenSource();
         public TestPipe? Other;
+        public string? ErrResult;
+        public string Id = id;
 
         public override async IAsyncEnumerable<int> Work(
             Func<byte[], bool> receiveCb,
@@ -36,10 +39,16 @@ namespace ServerTest
 
         public override async Task Close(string? CloseReason)
         {
-            await Task.Run(() =>
+            ErrResult = CloseReason;
+            var Id = this.Id;
+            Cts.Cancel();
+            if (Other != null)
             {
-                Cts.Cancel();
-            });
+                if (Other.ErrResult == null)
+                {
+                    await Other.Close(CloseReason);
+                }
+            }
         }
 
         public new async Task ReceiveMsg(SyncMsg msg)
@@ -48,15 +57,7 @@ namespace ServerTest
             {
                 EventQueue.Add(() =>
                 {
-                    var r = JsonSerializer.SerializeToUtf8Bytes(msg);
-                    if (IsAES)
-                    {
-                        return AESHelper.EncryptStringToBytes_Aes(r);
-                    }
-                    else
-                    {
-                        return r;
-                    }
+                    return JsonSerializer.SerializeToUtf8Bytes(msg);
                 });
             });
         }
@@ -67,15 +68,30 @@ namespace ServerTest
             {
                 throw new Exception("can't be null");
             }
-            await Other.ReceiveMsg(msg);
+            var r = JsonSerializer.SerializeToUtf8Bytes(msg);
+
+            if (IsAES)
+            {
+                var str = Encoding.UTF8.GetString(r);
+                var t = AESHelper.EncryptStringToBytes_Aes(str);
+                var f = AESHelper.DecryptStringFromBytes_Aes(t);
+#pragma warning disable CS8604 // 引用类型参数可能为 null。
+                await Other.ReceiveMsg(JsonSerializer.Deserialize<SyncMsg>(f));
+#pragma warning restore CS8604 // 引用类型参数可能为 null。
+            }
+            else
+            {
+#pragma warning disable CS8604 // 引用类型参数可能为 null。
+                await Other.ReceiveMsg(JsonSerializer.Deserialize<SyncMsg>(r));
+#pragma warning restore CS8604 // 引用类型参数可能为 null。
+            }
         }
 
         protected override async Task Listen(Func<byte[], bool> receiveCb)
         {
-            while (!Cts.Token.IsCancellationRequested)
+            try
             {
-                Func<byte[]> eventTask = EventQueue.Take(Cts.Token);
-                if (eventTask != null)
+                foreach (var eventTask in EventQueue.GetConsumingEnumerable(Cts.Token))
                 {
                     await Task.Run(() =>
                     {
@@ -83,6 +99,13 @@ namespace ServerTest
                         receiveCb(r);
                     });
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                //var x = 1;
+                var id = Id;
+                //抛出异常 从 p3 传递到 p2
+                throw new Exception(ErrResult);
             }
         }
     }

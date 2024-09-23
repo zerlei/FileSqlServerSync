@@ -19,8 +19,8 @@ public class DirFileConfig
 
     ///
     public Dir? LocalDirInfo { get; set; }
-    public Dir? DiffDirInfo{ get; set; }
-    public Dir? RemoteDirInfo{ get; set; }
+    public Dir? DiffDirInfo { get; set; }
+    public Dir? RemoteDirInfo { get; set; }
 }
 
 public class MSSqlConfig
@@ -29,18 +29,22 @@ public class MSSqlConfig
     /// 数据库地址
     /// </summary>
     public required string ServerName { get; set; }
+
     /// <summary>
     /// db名称
     /// </summary>
     public required string DatebaseName { get; set; }
+
     /// <summary>
     /// 用户
     /// </summary>
     public required string User { get; set; }
+
     /// <summary>
     /// 密码
     /// </summary>
     public required string Password { get; set; }
+
     /// <summary>
     /// 通常是：True
     /// </summary>
@@ -49,7 +53,7 @@ public class MSSqlConfig
     /// <summary>
     /// 同步数据的表格 ！！！ 通常是 dbo.TableName !!! 注意dbo.
     /// </summary>
-    public List<string>? SyncTablesData{get;set;}
+    public List<string>? SyncTablesData { get; set; }
 }
 
 public class Config
