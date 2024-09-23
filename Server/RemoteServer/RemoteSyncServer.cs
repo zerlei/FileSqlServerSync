@@ -1,4 +1,3 @@
-
 using System.Net.WebSockets;
 using Common;
 
@@ -29,16 +28,22 @@ public class RemoteSyncServer
     /// 发布源连接
     /// </summary>
     public readonly AbsPipeLine Pipe;
+
     /// <summary>
     /// 父工程，用于释放资源
     /// </summary>
     public readonly RemoteSyncServerFactory Factory;
-    
+
     public string Name;
 
     public string Pwd;
 
-    public RemoteSyncServer(AbsPipeLine pipe, RemoteSyncServerFactory factory,string name,string pwd)
+    public RemoteSyncServer(
+        AbsPipeLine pipe,
+        RemoteSyncServerFactory factory,
+        string name,
+        string pwd
+    )
     {
         Pipe = pipe;
         Factory = factory;
@@ -48,14 +53,14 @@ public class RemoteSyncServer
 
         Task.Run(async () =>
         {
-            var rs = Pipe.Work(
-                (byte[] b) =>
-                {
-                    return StateHelper.ReceiveMsg(b);
-                }
-            );
             try
             {
+                var rs = Pipe.Work(
+                    (byte[] b) =>
+                    {
+                        return StateHelper.ReceiveMsg(b);
+                    }
+                );
                 await foreach (var r in rs) { }
             }
             catch (Exception e)
@@ -64,7 +69,6 @@ public class RemoteSyncServer
             }
         });
     }
-
 
     public void Close(string? CloseReason)
     {

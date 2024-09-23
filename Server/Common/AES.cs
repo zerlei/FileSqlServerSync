@@ -33,6 +33,14 @@ public class AESHelper
         0x44,
         0xB5,
         0xF6,
+        0x23,
+        0x44,
+        0xB5,
+        0xF6,
+        0x44,
+        0xB5,
+        0xF6,
+        0x23,
     ];
     static readonly byte[] IV =
     [
@@ -54,11 +62,15 @@ public class AESHelper
         0xB6,
     ];
 
-    public static byte[] EncryptStringToBytes_Aes(byte[] plainText)
+    public static byte[] EncryptStringToBytes_Aes(string plainText)
     {
         // Check arguments.
         if (plainText == null || plainText.Length <= 0)
-            throw new ArgumentNullException(nameof(plainText), "can't be null");
+            throw new ArgumentNullException("plainText");
+        if (Key == null || Key.Length <= 0)
+            throw new ArgumentNullException("Key");
+        if (IV == null || IV.Length <= 0)
+            throw new ArgumentNullException("IV");
         byte[] encrypted;
 
         // Create an Aes object
@@ -72,14 +84,24 @@ public class AESHelper
             ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
             // Create the streams used for encryption.
-            using MemoryStream msEncrypt = new();
-            using CryptoStream csEncrypt = new(msEncrypt, encryptor, CryptoStreamMode.Write);
-            using (StreamWriter swEncrypt = new(csEncrypt))
+            using (MemoryStream msEncrypt = new MemoryStream())
             {
-                //Write all data to the stream.
-                swEncrypt.Write(plainText);
+                using (
+                    CryptoStream csEncrypt = new CryptoStream(
+                        msEncrypt,
+                        encryptor,
+                        CryptoStreamMode.Write
+                    )
+                )
+                {
+                    using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                    {
+                        //Write all data to the stream.
+                        swEncrypt.Write(plainText);
+                    }
+                    encrypted = msEncrypt.ToArray();
+                }
             }
-            encrypted = msEncrypt.ToArray();
         }
 
         // Return the encrypted bytes from the memory stream.
@@ -90,11 +112,15 @@ public class AESHelper
     {
         // Check arguments.
         if (cipherText == null || cipherText.Length <= 0)
-            throw new ArgumentNullException(nameof(cipherText), "can't be null");
+            throw new ArgumentNullException("cipherText");
+        if (Key == null || Key.Length <= 0)
+            throw new ArgumentNullException("Key");
+        if (IV == null || IV.Length <= 0)
+            throw new ArgumentNullException("IV");
 
         // Declare the string used to hold
         // the decrypted text.
-        string plaintext = string.Empty;
+        string plaintext = null;
 
         // Create an Aes object
         // with the specified key and IV.
@@ -107,12 +133,24 @@ public class AESHelper
             ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
             // Create the streams used for decryption.
-            using MemoryStream msDecrypt = new(cipherText);
-            using CryptoStream csDecrypt = new(msDecrypt, decryptor, CryptoStreamMode.Read);
-            using StreamReader srDecrypt = new(csDecrypt);
-            // Read the decrypted bytes from the decrypting stream
-            // and place them in a string.
-            plaintext = srDecrypt.ReadToEnd();
+            using (MemoryStream msDecrypt = new MemoryStream(cipherText))
+            {
+                using (
+                    CryptoStream csDecrypt = new CryptoStream(
+                        msDecrypt,
+                        decryptor,
+                        CryptoStreamMode.Read
+                    )
+                )
+                {
+                    using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                    {
+                        // Read the decrypted bytes from the decrypting stream
+                        // and place them in a string.
+                        plaintext = srDecrypt.ReadToEnd();
+                    }
+                }
+            }
         }
 
         return plaintext;

@@ -7,6 +7,7 @@ public enum SyncMsgType
     Process = 2,
     // DirFilePack = 3
 }
+
 public enum SyncProcessStep
 {
     Connect = 1,
@@ -16,15 +17,12 @@ public enum SyncProcessStep
     UploadAndUnpack = 5,
     Publish = 6
 }
-public class SyncMsg(SyncMsgType msgType, SyncProcessStep step,  string body)
+
+public class SyncMsg
 {
-    public SyncMsgType? Type { get; set; } = msgType;
+    public SyncMsgType Type { get; set; }
 
-    public SyncProcessStep Step {get;set;} = step;
+    public SyncProcessStep Step { get; set; }
 
-    public bool IsSuccess
-    {
-        get { return Type != SyncMsgType.Error; }
-    }
-    public string Body { get; set; } = body;
+    public required string Body { get; set; }
 }

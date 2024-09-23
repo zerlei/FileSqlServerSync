@@ -31,12 +31,18 @@ public class LocalSyncServer
     public readonly AbsPipeLine LocalPipe;
 
     public readonly AbsPipeLine RemotePipe;
+
     /// <summary>
     /// 父工程，用于释放资源
     /// </summary>
     public readonly LocalSyncServerFactory Factory;
 
-    public LocalSyncServer(AbsPipeLine pipe, LocalSyncServerFactory factory,string name,AbsPipeLine remotePipe )
+    public LocalSyncServer(
+        AbsPipeLine pipe,
+        LocalSyncServerFactory factory,
+        string name,
+        AbsPipeLine remotePipe
+    )
     {
         LocalPipe = pipe;
         Factory = factory;
@@ -46,14 +52,14 @@ public class LocalSyncServer
 
         Task.Run(async () =>
         {
-            var rs = LocalPipe.Work(
-                (byte[] b) =>
-                {
-                    return StateHelper.ReceiveLocalMsg(b);
-                }
-            );
             try
             {
+                var rs = LocalPipe.Work(
+                    (byte[] b) =>
+                    {
+                        return StateHelper.ReceiveLocalMsg(b);
+                    }
+                );
                 await foreach (var r in rs) { }
             }
             catch (Exception e)
@@ -62,7 +68,6 @@ public class LocalSyncServer
             }
         });
     }
-
 
     public void Close(string? CloseReason)
     {

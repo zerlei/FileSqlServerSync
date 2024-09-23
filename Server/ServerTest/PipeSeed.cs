@@ -12,7 +12,7 @@ public class PipeSeed : IDisposable
         {
             Name = "Test",
             RemoteUrl = "D:/FileSyncTest",
-            RemotePwd = "",
+            RemotePwd = "t123",
             IsDeployDb = true,
             IsDeployProject = true,
             LocalProjectAbsolutePath = "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
@@ -42,12 +42,9 @@ public class PipeSeed : IDisposable
                 Password = "0",
                 TrustServerCertificate = "True"
             },
-            DirFileConfigs = new List<DirFileConfig>{
-                new DirFileConfig{
-                    DirPath = "/bin",
-                    Excludes = ["/roslyn","/Views"]
-
-                }
+            DirFileConfigs = new List<DirFileConfig>
+            {
+                new DirFileConfig { DirPath = "/bin", Excludes = ["/roslyn", "/Views"] }
             }
         };
     }
