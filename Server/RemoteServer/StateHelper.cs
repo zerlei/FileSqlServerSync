@@ -21,6 +21,7 @@ public abstract class StateHelpBase(
     protected readonly RemoteSyncServer Context = context;
 
     protected readonly SyncProcessStep Step = step;
+
     public SyncMsg CreateErrMsg(string Body)
     {
         return new SyncMsg(SyncMsgType.Error, Step, Body);
@@ -76,36 +77,31 @@ public class DiffFileHelper(RemoteSyncServer context)
     {
         Context.SyncConfig = JsonSerializer.Deserialize<Config>(msg.Body);
 
+        var diffConfigs = new List<DirFileConfig>();
         //文件对比
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-            if (e.DirInfo == null)
+            if (e.LocalDirInfo == null)
             {
                 throw new NullReferenceException("RemoteServer: 发布的文件为空！--这个异常应该永远不会发生~");
             }
             else
             {
-                var nd = e.DirInfo.Clone();
+                var nd = e.LocalDirInfo.Clone();
                 nd.ResetRootPath(
                     Context.NotNullSyncConfig.LocalRootPath,
                     Context.NotNullSyncConfig.RemoteRootPath
                 );
                 nd.ExtractInfo(e.CherryPicks, e.Excludes);
-                var diff = e.DirInfo.Diff(nd);
-                e.DirInfo = nd;
-                Context.Diff.Add(
-                    new DirFileConfig()
-                    {
-                        DirPath = e.DirPath,
-                        Excludes = e.Excludes,
-                        CherryPicks = e.CherryPicks,
-                        DirInfo = diff
-                    }
+                e.DiffDirInfo = nd.Diff(nd);
+                e.RemoteDirInfo = nd;
+                diffConfigs.Add(
+                    new DirFileConfig { DiffDirInfo = e.DiffDirInfo, DirPath = e.DirPath }
                 );
             }
         });
         //将对比结果发送到Local
-        Context.Pipe.SendMsg(CreateMsg(JsonSerializer.Serialize(Context.Diff)));
+        Context.Pipe.SendMsg(CreateMsg(JsonSerializer.Serialize(diffConfigs)));
     }
 }
 
@@ -189,16 +185,13 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             ),
             Context.NotNullSyncConfig.RemoteRootPath
         );
-        for (int i = 0; i < Context.NotNullSyncConfig.DirFileConfigs.Count; ++i)
+        Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-#pragma warning disable CS8604 // Possible null reference argument.
-            Context
-                .NotNullSyncConfig.DirFileConfigs[i]
-                .DirInfo.CombineJustDirFile(DirFileOp, Context.Diff[i].DirInfo);
-#pragma warning restore CS8604 // Possible null reference argument.
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-        }
+            if (e.RemoteDirInfo != null && e.DiffDirInfo != null)
+            {
+                e.RemoteDirInfo.CombineJustDirFile(DirFileOp, e.DiffDirInfo);
+            }
+        });
 
         Context.Pipe.SendMsg(CreateMsg("发布完成！")).Wait();
     }
