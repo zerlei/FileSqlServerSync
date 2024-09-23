@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Common;
-using Microsoft.AspNetCore.Mvc;
 
 namespace LocalServer;
 
@@ -321,7 +320,7 @@ public class UploadPackedHelper(LocalSyncServer context)
     {
         Context
             .LocalPipe.UploadFile(
-                Context.NotNullSyncConfig.RemoteUrl + "/UploadPacked",
+                Context.NotNullSyncConfig.RemoteUrl ,
                 $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.zip",
                 (double current) =>
                 {
