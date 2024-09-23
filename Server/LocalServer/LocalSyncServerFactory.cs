@@ -1,13 +1,20 @@
 using Common;
+using System.Net.WebSockets;
+
 namespace LocalServer;
 
 public class LocalSyncServerFactory
 {
     private readonly object Lock = new();
 
-    public  void CreateLocalSyncServer(AbsPipeLine pipeLine,string name)
+    public void CreateLocalSyncServer(AbsPipeLine pipeLine, string name,AbsPipeLine absPipeLine)
     {
-        var server = new LocalSyncServer(pipeLine, this,name);
+        var server = new LocalSyncServer(
+            pipeLine,
+            this,
+            name,
+            absPipeLine
+        );
         lock (Lock)
         {
             Servers.Add(server);
@@ -26,7 +33,7 @@ public class LocalSyncServerFactory
 
     public LocalSyncServer? GetServerByName(string name)
     {
-        var it = Servers.Where(x=>x.Name== name).FirstOrDefault();
+        var it = Servers.Where(x => x.Name == name).FirstOrDefault();
         return it;
     }
 }

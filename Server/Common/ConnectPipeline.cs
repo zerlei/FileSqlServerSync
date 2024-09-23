@@ -55,7 +55,7 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
             );
             var fileContent = new ProgressStreamContent(fileStream, progress);
             content.Add(fileContent, "file", Path.GetFileName(filePath));
-            var it = await client.PostAsync(url, content);
+            var it = await client.PostAsync(url + "/UploadPacked", content);
             if (it.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 throw new Exception(it.Content.ReadAsStringAsync().Result);

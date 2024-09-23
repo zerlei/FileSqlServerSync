@@ -5,7 +5,7 @@ public enum SyncMsgType
     Error = 0,
     General = 1,
     Process = 2,
-    DirFilePack = 3
+    // DirFilePack = 3
 }
 public enum SyncProcessStep
 {

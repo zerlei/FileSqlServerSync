@@ -20,8 +20,12 @@ namespace LocalServer.Controllers
                     if (Factory.GetServerByName(Name) == null)
                     {
                         var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                        var pipeLine = new WebSocPipeLine<WebSocket>(webSocket,false);
-                        Factory.CreateLocalSyncServer(pipeLine, Name);
+                        var pipeLine = new WebSocPipeLine<WebSocket>(webSocket, false);
+                        Factory.CreateLocalSyncServer(
+                            pipeLine,
+                            Name,
+                            new WebSocPipeLine<ClientWebSocket>(new ClientWebSocket(), false)
+                        );
                     }
                     else
                     {
