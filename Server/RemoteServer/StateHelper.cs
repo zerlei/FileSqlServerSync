@@ -204,7 +204,7 @@ public class FinallyPublishHelper(RemoteSyncServer context)
         {
             if (e.RemoteDirInfo != null && e.DiffDirInfo != null)
             {
-                e.RemoteDirInfo.CombineJustDirFile(DirFileOp, e.DiffDirInfo);
+                e.RemoteDirInfo.Combine(DirFileOp, e.DiffDirInfo,false,true);
             }
         });
 

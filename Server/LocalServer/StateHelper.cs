@@ -202,7 +202,11 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
         //提取本地文件的信息
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
         {
-            e.LocalDirInfo = new Dir(Context.NotNullSyncConfig.LocalRootPath + e.DirPath);
+            e.LocalDirInfo = new Dir
+            {
+                Path = Context.NotNullSyncConfig.LocalRootPath + e.DirPath,
+                Children = []
+            };
             e.LocalDirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
         });
         //将配置信息发送到remoteServer
