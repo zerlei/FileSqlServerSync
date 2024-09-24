@@ -100,13 +100,13 @@ public class DiffFileHelper(RemoteSyncServer context)
             }
             else
             {
-                var nd = e.LocalDirInfo.Clone();
-                nd.ResetRootPath(
-                    Context.NotNullSyncConfig.LocalRootPath,
-                    Context.NotNullSyncConfig.RemoteRootPath
-                );
+                var nd = new Dir
+                {
+                    Path = Context.NotNullSyncConfig.RemoteRootPath + e.DirPath,
+                    Children = []
+                };
                 nd.ExtractInfo(e.CherryPicks, e.Excludes);
-                e.DiffDirInfo = nd.Diff(nd);
+                e.DiffDirInfo = e.LocalDirInfo.Diff(nd);
                 e.RemoteDirInfo = nd;
                 diffConfigs.Add(
                     new DirFileConfig { DiffDirInfo = e.DiffDirInfo, DirPath = e.DirPath }
@@ -149,9 +149,9 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var arguments =
-                    $"/Action:Publish  /SourceFile: {RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac "
-                    + $"/TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
-                    + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True ";
+                    $" /Action:Publish  /SourceFile: {RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac"
+                    + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
+                    + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True";
 
                 ProcessStartInfo startInfo =
                     new()
@@ -204,7 +204,7 @@ public class FinallyPublishHelper(RemoteSyncServer context)
         {
             if (e.RemoteDirInfo != null && e.DiffDirInfo != null)
             {
-                e.RemoteDirInfo.Combine(DirFileOp, e.DiffDirInfo,false,true);
+                e.RemoteDirInfo.Combine(DirFileOp, e.DiffDirInfo, false, true);
             }
         });
 
