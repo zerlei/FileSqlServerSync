@@ -10,168 +10,263 @@ public class FilesSeed : IDisposable
         // string TestPath = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
         DateTime NewTime = DateTime.Now.AddSeconds(-99);
         DateTime OldTime = NewTime.AddSeconds(-20);
-        NewDir = new Dir(
-            TestPath + "/NewDir",
+        NewDir = new Dir
+        {
+            Path = TestPath + "/NewDir",
+            Children =
             [
-                new Dir($"{TestPath}/NewDir/0"),
-                new Dir(
-                    $"{TestPath}/NewDir/1",
-                    [new Common.File($"{TestPath}/NewDir/1/1.txt", NewTime)]
-                ),
-                new Dir(
-                    $"{TestPath}/NewDir/2",
+                new Dir { Path = $"{TestPath}/NewDir/0", Children = [] },
+                new Dir
+                {
+                    Path = $"{TestPath}/NewDir/1",
+                    Children =
                     [
-                        new Common.File($"{TestPath}/NewDir/2/2.txt", NewTime),
-                        new Dir(
-                            $"{TestPath}/NewDir/2/2_1",
-                            [
-                                new Common.File($"{TestPath}/NewDir/2/2_1/1.txt", NewTime),
-                                new Common.File($"{TestPath}/NewDir/2/2_1/2.txt", NewTime),
-                            ]
-                        ),
-                        new Dir(
-                            $"{TestPath}/NewDir/2/2_2",
-                            [
-                                new Common.File($"{TestPath}/NewDir/2/2_2/1.txt", NewTime),
-                                new Common.File($"{TestPath}/NewDir/2/2_2/2.txt", NewTime),
-                                new Dir(
-                                    $"{TestPath}/NewDir/2/2_2/2_3",
-                                    [
-                                        new Common.File(
-                                            $"{TestPath}/NewDir/2/2_2/2_3/1.txt",
-                                            NewTime
-                                        ),
-                                    ]
-                                ),
-                            ]
-                        )
+                        new Common.File { Path = $"{TestPath}/NewDir/1/1.txt", MTime = NewTime }
                     ]
-                ),
+                },
+                new Dir
+                {
+                    Path = $"{TestPath}/NewDir/2",
+                    Children =
+                    [
+                        new Common.File { Path = $"{TestPath}/NewDir/2/2.txt", MTime = NewTime },
+                        new Dir
+                        {
+                            Path = $"{TestPath}/NewDir/2/2_1",
+                            Children =
+                            [
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/NewDir/2/2_1/1.txt",
+                                    MTime = NewTime
+                                },
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/NewDir/2/2_1/2.txt",
+                                    MTime = NewTime
+                                },
+                            ]
+                        },
+                        new Dir
+                        {
+                            Path = $"{TestPath}/NewDir/2/2_2",
+                            Children =
+                            [
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/NewDir/2/2_2/1.txt",
+                                    MTime = NewTime
+                                },
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/NewDir/2/2_2/2.txt",
+                                    MTime = NewTime
+                                },
+                                new Dir
+                                {
+                                    Path = $"{TestPath}/NewDir/2/2_2/2_3",
+                                    Children =
+                                    [
+                                        new Common.File
+                                        {
+                                            Path = $"{TestPath}/NewDir/2/2_2/2_3/1.txt",
+                                            MTime = NewTime
+                                        },
+                                    ]
+                                },
+                            ]
+                        }
+                    ]
+                },
             ]
-        );
-        DiffDir = new Dir(
-            $"{TestPath}/OldDir",
+        };
+        DiffDir = new Dir
+        {
+            Path = $"{TestPath}/OldDir",
+            Children =
             [
-                new Dir(
-                    $"{TestPath}/OldDir/1",
-                    [new Common.File($"{TestPath}/OldDir/1/2_D.txt", NewTime, NextOpType.Del),]
-                ),
-                new Dir(
-                    $"{TestPath}/OldDir/2",
+                new Dir
+                {
+                    Path = $"{TestPath}/OldDir/1",
+                    Children =
+                    [
+                        new Common.File
+                        {
+                            Path = $"{TestPath}/OldDir/1/2_D.txt",
+                            MTime = NewTime,
+                            NextOp = NextOpType.Del
+                        },
+                    ]
+                },
+                new Dir
+                {
+                    Path = $"{TestPath}/OldDir/2",
+                    Children =
                     [
                         // 将要添加
-                        new Common.File($"{TestPath}/OldDir/2/2.txt", NewTime, NextOpType.Add),
-                        new Dir(
-                            $"{TestPath}/OldDir/2/2_1",
+                        new Common.File
+                        {
+                            Path = $"{TestPath}/OldDir/2/2.txt",
+                            MTime = NewTime,
+                            NextOp = NextOpType.Add
+                        },
+                        new Dir
+                        {
+                            Path = $"{TestPath}/OldDir/2/2_1",
+                            Children =
                             [
-                                new Common.File(
-                                    $"{TestPath}/OldDir/2/2_1/2.txt",
-                                    NewTime,
-                                    NextOpType.Modify
-                                ),
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_1/2.txt",
+                                    MTime = NewTime,
+                                    NextOp = NextOpType.Modify
+                                },
                             ]
-                        ),
-                        new Dir(
-                            $"{TestPath}/OldDir/2/2_2_M",
+                        },
+                        new Dir
+                        {
+                            Path = $"{TestPath}/OldDir/2/2_2_M",
+                            Children =
                             [
-                                new Common.File(
-                                    $"{TestPath}/OldDir/2/2_2_M/1.txt",
-                                    OldTime,
-                                    NextOpType.Del
-                                ),
-                                new Common.File(
-                                    $"{TestPath}/OldDir/2/2_2_M/2.txt",
-                                    OldTime,
-                                    NextOpType.Del
-                                ),
-                                new Dir(
-                                    $"{TestPath}/OldDir/2/2_2_M/2_3",
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2_M/1.txt",
+                                    MTime = OldTime,
+                                    NextOp = NextOpType.Del
+                                },
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2_M/2.txt",
+                                    MTime = OldTime,
+                                    NextOp = NextOpType.Del
+                                },
+                                new Dir
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2_M/2_3",
+                                    Children =
                                     [
-                                        new Common.File(
-                                            $"{TestPath}/OldDir/2/2_2_M/2_3/1.txt",
-                                            OldTime,
-                                            NextOpType.Del
-                                        ),
+                                        new Common.File
+                                        {
+                                            Path = $"{TestPath}/OldDir/2/2_2_M/2_3/1.txt",
+                                            MTime = OldTime,
+                                            NextOp = NextOpType.Del
+                                        },
                                     ],
-                                    NextOpType.Del
-                                ),
+                                    NextOp = NextOpType.Del
+                                },
                             ],
-                            NextOpType.Del
-                        ),
-                        new Dir(
-                            $"{TestPath}/OldDir/2/2_2",
+                            NextOp = NextOpType.Del
+                        },
+                        new Dir
+                        {
+                            Path = $"{TestPath}/OldDir/2/2_2",
+                            Children =
                             [
-                                new Common.File(
-                                    $"{TestPath}/OldDir/2/2_2/1.txt",
-                                    NewTime,
-                                    NextOpType.Add
-                                ),
-                                new Common.File(
-                                    $"{TestPath}/OldDir/2/2_2/2.txt",
-                                    NewTime,
-                                    NextOpType.Add
-                                ),
-                                new Dir(
-                                    $"{TestPath}/OldDir/2/2_2/2_3",
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2/1.txt",
+                                    MTime = NewTime,
+                                    NextOp = NextOpType.Add
+                                },
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2/2.txt",
+                                    MTime = NewTime,
+                                    NextOp = NextOpType.Add
+                                },
+                                new Dir
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2/2_3",
+                                    Children =
                                     [
-                                        new Common.File(
-                                            $"{TestPath}/OldDir/2/2_2/2_3/1.txt",
-                                            NewTime,
-                                            NextOpType.Add
-                                        ),
+                                        new Common.File
+                                        {
+                                            Path = $"{TestPath}/OldDir/2/2_2/2_3/1.txt",
+                                            MTime = NewTime,
+                                            NextOp = NextOpType.Add
+                                        },
                                     ],
-                                    NextOpType.Add
-                                ),
+                                    NextOp = NextOpType.Add
+                                },
                             ],
-                            NextOpType.Add
-                        )
+                            NextOp = NextOpType.Add
+                        }
                     ]
-                ),
+                },
             ]
-        );
-        OldDir = new Dir(
-            $"{TestPath}/OldDir",
+        };
+        OldDir = new Dir
+        {
+            Path = $"{TestPath}/OldDir",
+            Children =
             [
-                new Dir($"{TestPath}/OldDir/0"),
-                new Dir(
-                    $"{TestPath}/OldDir/1",
+                new Dir { Path = $"{TestPath}/OldDir/0", Children = [] },
+                new Dir
+                {
+                    Path = $"{TestPath}/OldDir/1",
+                    Children =
                     [
                         //不做修改
-                        new Common.File($"{TestPath}/OldDir/1/1.txt", NewTime),
+                        new Common.File { Path = $"{TestPath}/OldDir/1/1.txt", MTime = NewTime },
                         //将要删除
-                        new Common.File($"{TestPath}/OldDir/1/2_D.txt", NewTime),
+                        new Common.File { Path = $"{TestPath}/OldDir/1/2_D.txt", MTime = NewTime },
                     ]
-                ),
-                new Dir(
-                    $"{TestPath}/OldDir/2",
+                },
+                new Dir
+                {
+                    Path = $"{TestPath}/OldDir/2",
+                    Children =
                     [
-                        new Dir(
-                            $"{TestPath}/OldDir/2/2_1",
+                        new Dir
+                        {
+                            Path = $"{TestPath}/OldDir/2/2_1",
+                            Children =
                             [
-                                new Common.File($"{TestPath}/OldDir/2/2_1/1.txt", NewTime),
-                                new Common.File($"{TestPath}/OldDir/2/2_1/2.txt", OldTime),
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_1/1.txt",
+                                    MTime = NewTime
+                                },
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_1/2.txt",
+                                    MTime = OldTime
+                                },
                             ]
-                        ),
-                        new Dir(
-                            $"{TestPath}/OldDir/2/2_2_M",
+                        },
+                        new Dir
+                        {
+                            Path = $"{TestPath}/OldDir/2/2_2_M",
+                            Children =
                             [
-                                new Common.File($"{TestPath}/OldDir/2/2_2_M/1.txt", OldTime),
-                                new Common.File($"{TestPath}/OldDir/2/2_2_M/2.txt", OldTime),
-                                new Dir(
-                                    $"{TestPath}/OldDir/2/2_2_M/2_3",
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2_M/1.txt",
+                                    MTime = OldTime
+                                },
+                                new Common.File
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2_M/2.txt",
+                                    MTime = OldTime
+                                },
+                                new Dir
+                                {
+                                    Path = $"{TestPath}/OldDir/2/2_2_M/2_3",
+                                    Children =
                                     [
-                                        new Common.File(
-                                            $"{TestPath}/OldDir/2/2_2_M/2_3/1.txt",
-                                            OldTime
-                                        ),
+                                        new Common.File
+                                        {
+                                            Path = $"{TestPath}/OldDir/2/2_2_M/2_3/1.txt",
+                                            MTime = OldTime
+                                        },
                                     ]
-                                ),
+                                },
                             ]
-                        )
+                        }
                     ]
-                ),
+                },
             ]
-        );
+        };
         fileDirOp = new SimpleFileDirOp();
     }
 

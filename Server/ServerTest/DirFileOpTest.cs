@@ -1,8 +1,9 @@
 using Common;
+using Newtonsoft.Json;
 using XUnit.Project.Attributes;
-/*using Newtonsoft.Json;*/
 
 namespace ServerTest;
+
 /// <summary>
 /// xUnit将会对每个测试方法创建一个测试上下文，IClassFixture可以用来创建类中共享测试上下文，
 ///
@@ -35,10 +36,10 @@ public class DirFileOpTest : IDisposable
     {
         filesSeed.NewDir.WriteByThisInfo(filesSeed.fileDirOp);
         filesSeed.OldDir.WriteByThisInfo(filesSeed.fileDirOp);
-        Dir nnd = new(filesSeed.NewDir.FormatedPath);
+        Dir nnd = new() { Path = filesSeed.NewDir.FormatedPath, Children = [] };
         nnd.ExtractInfo();
         Assert.True(nnd.IsEqual(filesSeed.NewDir), "新文件提取文件夹的信息与写入信息不一致！");
-        Dir nod = new(filesSeed.OldDir.FormatedPath);
+        Dir nod = new() { Path = filesSeed.OldDir.FormatedPath, Children = [] };
         nod.ExtractInfo();
         Assert.True(nod.IsEqual(filesSeed.OldDir), "旧提取文件夹的信息与写入信息不一致！");
     }
@@ -54,7 +55,7 @@ public class DirFileOpTest : IDisposable
         // Console.WriteLine(cDDir.Children.Count);
         //Assert.True(IsSuccess);
 
-        /*var str = JsonConvert.SerializeObject(cDDir);*/
+        // var str = JsonConvert.SerializeObject(cDDir);
         Assert.True(filesSeed.DiffDir.IsEqual(cDDir), "文件对比结果错误！");
     }
 
@@ -65,8 +66,8 @@ public class DirFileOpTest : IDisposable
     public void SyncFileDir()
     {
         filesSeed.OldDir.WriteByThisInfo(filesSeed.fileDirOp);
-        filesSeed.OldDir.CombineJustDirFile(filesSeed.fileDirOp, filesSeed.DiffDir);
-        Dir oldSync = new(filesSeed.OldDir.FormatedPath);
+        filesSeed.OldDir.Combine(filesSeed.fileDirOp, filesSeed.DiffDir, false, true);
+        Dir oldSync = new() { Path = filesSeed.OldDir.FormatedPath, Children = [] };
         oldSync.ExtractInfo();
         oldSync.ResetRootPath(filesSeed.OldDir.FormatedPath, filesSeed.NewDir.FormatedPath);
         Assert.True(oldSync.IsEqual(filesSeed.NewDir), "文件夹同步后信息保持不一致！");
@@ -78,7 +79,7 @@ public class DirFileOpTest : IDisposable
     [Fact, TestPriority(3)]
     public void DirsCombine()
     {
-        filesSeed.OldDir.CombineJustObject(filesSeed.DiffDir);
+        filesSeed.OldDir.Combine(null, filesSeed.DiffDir);
         //Assert.False(filesSeed.NewDir.IsEqual(filesSeed.OldDir));
         filesSeed.OldDir.ResetRootPath("OldDir", "NewDir");
         // Console.WriteLine(filesSeed.OldDir.Path);

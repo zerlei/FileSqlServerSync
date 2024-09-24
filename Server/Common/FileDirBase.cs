@@ -13,21 +13,17 @@ public enum NextOpType
     Del = 2
 }
 
-public abstract class AFileOrDir(
-    string path,
-    DirOrFile type = DirOrFile.File,
-    NextOpType? nextOp = null
-)
+public abstract class AFileOrDir
 {
-    public DirOrFile Type { get; set; } = type;
-    public NextOpType? NextOp { get; set; } = nextOp;
+    public DirOrFile Type { get; set; }
+    public NextOpType? NextOp { get; set; }
 
     // private string Path = path;
     /// <summary>
     /// 全部为绝对路径... 占用资源会大一点，但是完全OK
     /// </summary>
     ///
-    private string Path = path;
+    public required string Path { get; set; }
 
     /// <summary>
     /// 相当于Path 包装，天杀的windows在路径字符串中使用两种分隔符，“/” 和“\”,这导致，即使两个字符串不相同，也可能是同一个路径。现在把它们统一起来
@@ -55,10 +51,13 @@ public abstract class AFileOrDir(
 /// </summary>
 /// <param name="path">绝对路径</param>
 /// <param name="mtime">文件的修改时间</param>/
-public class File(string path, DateTime mtime, NextOpType? nextOp = null)
-    : AFileOrDir(path, DirOrFile.File, nextOp)
+public class File : AFileOrDir
 {
-    public DateTime MTime { get; set; } = mtime;
+    public File() 
+    {
+        Type = DirOrFile.File;
+    }
+    public required DateTime MTime { get; set; }
 
     public override bool IsEqual(AFileOrDir other)
     {
@@ -74,6 +73,44 @@ public class File(string path, DateTime mtime, NextOpType? nextOp = null)
                 && this.NextOp == otherFile.NextOp;
 
             return r;
+        }
+    }
+}
+
+public class Dir : AFileOrDir
+{
+    public Dir()
+    {
+        Type = DirOrFile.Dir;
+    }
+    public required List<AFileOrDir> Children { get; set; }
+
+    public override bool IsEqual(AFileOrDir other)
+    {
+        if (other is not Dir otherDir)
+        {
+            return false;
+        }
+        else
+        {
+            if (this.FormatedPath != otherDir.FormatedPath || this.NextOp != otherDir.NextOp)
+            {
+                return false;
+            }
+            if (this.Children.Count != otherDir.Children.Count)
+            {
+                return false;
+            }
+            this.Children.Sort(AFileOrDir.Compare);
+            otherDir.Children.Sort(AFileOrDir.Compare);
+            for (int i = 0; i < this.Children.Count; i++)
+            {
+                if (!this.Children[i].IsEqual(otherDir.Children[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
