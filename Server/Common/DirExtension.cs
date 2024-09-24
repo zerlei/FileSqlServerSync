@@ -2,12 +2,11 @@ namespace Common;
 
 public static class DirExtension
 {
-
-     /// <summary>
+    /// <summary>
     /// 比较两个目录文件树是否相同,不相同返回差异部分,左侧是右侧的下一个版本,任何一个节点的nextop != null，即所有
     /// 节点都会打上标记
     /// 文件夹的 NextOp 只有新增和删除
-    /// 
+    ///
     /// </summary>
     /// <param name="otherRootDir"></param>
     /// <returns>右侧版本接下来进行的操作</returns>
@@ -286,14 +285,15 @@ public static class DirExtension
     {
         bool filter(string path)
         {
+            var relativePath = path.Replace('\\', '/').Replace(thisDir.FormatedPath, "");
             if (cherryPicks != null)
             {
-                return cherryPicks.Contains(path);
+                return cherryPicks.Contains(relativePath);
             }
 
             if (exculdes != null)
             {
-                return !exculdes.Contains(path);
+                return !exculdes.Contains(relativePath);
             }
             return true;
         }
@@ -302,24 +302,27 @@ public static class DirExtension
         {
             throw new NotSupportedException("this dir is not empty.");
         }
-        string[] files = Directory.GetFiles(thisDir.FormatedPath);
-        string[] dirs = Directory.GetDirectories(thisDir.FormatedPath);
-        foreach (var file in files)
+        if (Directory.Exists(thisDir.FormatedPath))
         {
-            if (filter(file))
+            string[] files = Directory.GetFiles(thisDir.FormatedPath);
+            string[] dirs = Directory.GetDirectories(thisDir.FormatedPath);
+            foreach (var file in files)
             {
-                thisDir.Children.Add(
-                    new File { Path = file, MTime = System.IO.File.GetLastWriteTime($"{file}") }
-                );
+                if (filter(file))
+                {
+                    thisDir.Children.Add(
+                        new File { Path = file, MTime = System.IO.File.GetLastWriteTime($"{file}") }
+                    );
+                }
             }
-        }
-        foreach (var dir in dirs)
-        {
-            if (filter(dir))
+            foreach (var dir in dirs)
             {
-                var ndir = new Dir { Path = dir, Children = [] };
-                ndir.ExtractInfo();
-                thisDir.Children.Add(ndir);
+                if (filter(dir))
+                {
+                    var ndir = new Dir { Path = dir, Children = [] };
+                    ndir.ExtractInfo(cherryPicks, exculdes);
+                    thisDir.Children.Add(ndir);
+                }
             }
         }
     }

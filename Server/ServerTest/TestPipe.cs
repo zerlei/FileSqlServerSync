@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Common;
+using RemoteServer;
 
 namespace ServerTest
 {
@@ -25,14 +26,19 @@ namespace ServerTest
         }
 
         public override async Task UploadFile(
-            string filePath,
             string dst,
+            string filePath,
             Func<double, bool> progressCb
         )
         {
+            dst = Path.Combine(RemoteSyncServer.TempRootFile, Path.GetFileName(filePath));
             await Task.Run(() =>
             {
                 progressCb(100);
+                //if (!Directory.Exists(dst))
+                //{
+                //    Directory.CreateDirectory(dst);
+                //}
                 System.IO.File.Copy(filePath, dst, true);
             });
         }

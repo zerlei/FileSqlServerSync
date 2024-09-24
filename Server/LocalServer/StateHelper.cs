@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Common;
 
 namespace LocalServer;
@@ -210,8 +211,11 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
             e.LocalDirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
         });
         //将配置信息发送到remoteServer
+        var options = new JsonSerializerOptions { WriteIndented = true };
         Context
-            .RemotePipe.SendMsg(CreateMsg(JsonSerializer.Serialize(Context.NotNullSyncConfig)))
+            .RemotePipe.SendMsg(
+                CreateMsg(JsonSerializer.Serialize(Context.NotNullSyncConfig, options))
+            )
             .Wait();
     }
 
@@ -275,12 +279,13 @@ public class DeployMSSqlHelper(LocalSyncServer context)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var arguments =
-                    $" /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac "
-                    + $"/DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log "
-                    + $"/p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
-                    + $"/SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User} "
-                    + $"/SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate} "
-                    + $"/p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True ";
+                    $" /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac"
+                    // 不要log file 了
+                    //+ $" /DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log"
+                    + $" /p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
+                    + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
+                    + $" /SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate}"
+                    + $" /p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True";
                 if (Context.NotNullSyncConfig.SrcDb.SyncTablesData != null)
                 {
                     foreach (var t in Context.NotNullSyncConfig.SrcDb.SyncTablesData)
@@ -343,7 +348,7 @@ public class UploadPackedHelper(LocalSyncServer context)
         Context
             .LocalPipe.UploadFile(
                 Context.NotNullSyncConfig.RemoteUrl,
-                $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.zip",
+                $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}.zip",
                 (double current) =>
                 {
                     Context

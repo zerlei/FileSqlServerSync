@@ -11,7 +11,7 @@ public class PipeSeed : IDisposable
         TestConfig = new Config
         {
             Name = "Test",
-            RemoteUrl = "D:/FileSyncTest",
+            RemoteUrl = "D:/FileSyncTest/dtemp",
             RemotePwd = "t123",
             IsDeployDb = true,
             IsDeployProject = true,

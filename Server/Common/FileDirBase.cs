@@ -1,4 +1,6 @@
-﻿namespace Common;
+﻿using System.Text.Json.Serialization;
+
+namespace Common;
 
 public enum DirOrFile
 {
@@ -13,7 +15,10 @@ public enum NextOpType
     Del = 2
 }
 
-public abstract class AFileOrDir
+[JsonDerivedType(typeof(AFileOrDir), typeDiscriminator: 1)]
+[JsonDerivedType(typeof(File), typeDiscriminator: 2)]
+[JsonDerivedType(typeof(Dir), typeDiscriminator: 3)]
+public class AFileOrDir
 {
     public DirOrFile Type { get; set; }
     public NextOpType? NextOp { get; set; }
@@ -33,7 +38,11 @@ public abstract class AFileOrDir
         get { return Path.Replace("\\", "/"); }
         set { Path = value; }
     }
-    public abstract bool IsEqual(AFileOrDir other);
+
+    public bool IsEqual(AFileOrDir other)
+    {
+        return false;
+    }
 
     public static int Compare(AFileOrDir l, AFileOrDir r)
     {
@@ -53,13 +62,14 @@ public abstract class AFileOrDir
 /// <param name="mtime">文件的修改时间</param>/
 public class File : AFileOrDir
 {
-    public File() 
+    public File()
     {
         Type = DirOrFile.File;
     }
+
     public required DateTime MTime { get; set; }
 
-    public override bool IsEqual(AFileOrDir other)
+    public new bool IsEqual(AFileOrDir other)
     {
         if (other is not File otherFile)
         {
@@ -83,9 +93,10 @@ public class Dir : AFileOrDir
     {
         Type = DirOrFile.Dir;
     }
+
     public required List<AFileOrDir> Children { get; set; }
 
-    public override bool IsEqual(AFileOrDir other)
+    public new bool IsEqual(AFileOrDir other)
     {
         if (other is not Dir otherDir)
         {
