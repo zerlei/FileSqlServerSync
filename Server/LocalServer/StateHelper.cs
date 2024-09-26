@@ -22,7 +22,7 @@ public abstract class StateHelpBase(
 {
     protected readonly LocalSyncServer Context = context;
 
-    protected readonly SyncProcessStep Step = step;
+    public readonly SyncProcessStep Step = step;
 
     public SyncMsg CreateErrMsg(string Body)
     {
@@ -91,7 +91,7 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
         Context.LocalPipe.SendMsg(msg);
         //下一步
         var deployHelper = new DeployHelper(Context);
-        Context.StateHelper = deployHelper;
+        Context.SetStateHelper(deployHelper);
         deployHelper.DeployProcess();
     }
 
@@ -107,7 +107,8 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
                 var rs = Context.RemotePipe.Work(
                     (byte[] b) =>
                     {
-                        return Context.StateHelper.ReceiveRemoteMsg(b);
+                        var x = Context.GetStateHelper().Step;
+                        return Context.GetStateHelper().ReceiveRemoteMsg(b);
                     },
                     Context.NotNullSyncConfig.RemoteUrl + "/websoc?Name=" + Context.Name
                 );
@@ -142,7 +143,7 @@ public class DeployHelper(LocalSyncServer context)
         {
             Context.LocalPipe.SendMsg(CreateMsg("配置为不发布跳过此步骤")).Wait();
             var h = new DiffFileAndPackHelper(Context);
-            Context.StateHelper = h;
+            Context.SetStateHelper(h);
             h.DiffProcess();
         }
         else
@@ -152,7 +153,7 @@ public class DeployHelper(LocalSyncServer context)
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "msdeploy", // The command to execute (can be any command line tool)
+                        FileName = "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe", // The command to execute (can be any command line tool)
                         Arguments =
                             $" -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
                         // The arguments to pass to the command (e.g., list directory contents)
@@ -172,9 +173,9 @@ public class DeployHelper(LocalSyncServer context)
 
                 if (process.ExitCode == 0)
                 {
-                    Context.LocalPipe.SendMsg(CreateMsg("发布成功！")).Wait();
+                    Context.LocalPipe.SendMsg(CreateMsg("本地编译成功！")).Wait();
                     var h = new DiffFileAndPackHelper(Context);
-                    Context.StateHelper = h;
+                    Context.SetStateHelper(h);
                     h.DiffProcess();
                 }
                 else
@@ -248,8 +249,8 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
             }
         });
         var n = new DeployMSSqlHelper(Context);
+        Context.SetStateHelper(n);
         n.PackSqlServerProcess();
-        Context.StateHelper = n;
     }
 }
 
@@ -263,7 +264,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
             Context.NotNullSyncConfig.Id.ToString()
         );
         var h = new UploadPackedHelper(Context);
-        Context.StateHelper = h;
+        Context.SetStateHelper(h);
         h.UpLoadPackedFile();
     }
 
@@ -297,7 +298,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "SqlPackage", // The command to execute (can be any command line tool)
+                        FileName = "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe", // The command to execute (can be any command line tool)
                         Arguments = arguments,
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
@@ -359,6 +360,8 @@ public class UploadPackedHelper(LocalSyncServer context)
             )
             .Wait();
         Context.LocalPipe.SendMsg(CreateMsg("上传完成！")).Wait();
+
+        var x = Context.GetStateHelper().Step;
     }
 
     protected override void HandleLocalMsg(SyncMsg msg)
@@ -370,7 +373,7 @@ public class UploadPackedHelper(LocalSyncServer context)
     {
         Context.LocalPipe.SendMsg(msg).Wait();
         var h = new FinallyPublishHelper(Context);
-        Context.StateHelper = h;
+        Context.SetStateHelper(h);
     }
 }
 

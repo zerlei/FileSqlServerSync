@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Common;
+using Microsoft.AspNetCore.Hosting.Server;
 using RemoteServer;
 
 namespace ServerTest
@@ -14,6 +15,7 @@ namespace ServerTest
         public TestPipe? Other;
         public string? ErrResult;
         public string Id = id;
+        public static RemoteSyncServerFactory syncServerFactory;
 
         public override async IAsyncEnumerable<int> Work(
             Func<byte[], bool> receiveCb,
@@ -34,12 +36,19 @@ namespace ServerTest
             dst = Path.Combine(RemoteSyncServer.TempRootFile, Path.GetFileName(filePath));
             await Task.Run(() =>
             {
+                System.IO.File.Copy(filePath, dst, true);
                 progressCb(100);
                 //if (!Directory.Exists(dst))
                 //{
                 //    Directory.CreateDirectory(dst);
                 //}
-                System.IO.File.Copy(filePath, dst, true);
+                Task.Run(() =>
+                {
+                    var it = syncServerFactory.GetServerByName("Test");
+                    var h = new UnPackAndReleaseHelper(it);
+                    it.StateHelper = h;
+                    h.UnPack();
+                });
             });
         }
 
@@ -111,7 +120,14 @@ namespace ServerTest
                 //var x = 1;
                 var id = Id;
                 //抛出异常 从 p3 传递到 p2
-                throw new Exception(ErrResult);
+                if (ErrResult == "正常退出！")
+                {
+                    return;
+                }
+                else
+                {
+                    throw new Exception(ErrResult);
+                }
             }
         }
     }
