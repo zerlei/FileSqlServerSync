@@ -126,7 +126,7 @@ public class UnPackAndReleaseHelper(RemoteSyncServer context)
     public void UnPack()
     {
         FileDirOpForUnpack.FirstUnComparess(
-            Path.Combine(RemoteSyncServer.TempRootFile, Context.NotNullSyncConfig.Id.ToString()),
+            Path.Combine(RemoteSyncServer.TempRootFile),
             Context.NotNullSyncConfig.Id.ToString()
         );
         Context.Pipe.SendMsg(CreateMsg("解压完成！")).Wait();
@@ -149,14 +149,14 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var arguments =
-                    $" /Action:Publish  /SourceFile: {RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac"
+                    $" /Action:Publish  /SourceFile:{RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac"
                     + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
                     + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True";
 
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "SqlPackage", // The command to execute (can be any command line tool)
+                        FileName = "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe", // The command to execute (can be any command line tool)
                         Arguments = arguments,
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
@@ -193,11 +193,7 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             Context.Pipe.SendMsg(CreateMsg("跳过数据库发布！")).Wait();
         }
         var DirFileOp = new FileDirOpForUnpack(
-            Path.Combine(
-                RemoteSyncServer.TempRootFile,
-                Context.NotNullSyncConfig.Id.ToString(),
-                Context.NotNullSyncConfig.Id.ToString()
-            ),
+            Path.Combine(RemoteSyncServer.TempRootFile, Context.NotNullSyncConfig.Id.ToString()),
             Context.NotNullSyncConfig.RemoteRootPath
         );
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>

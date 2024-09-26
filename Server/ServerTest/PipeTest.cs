@@ -19,6 +19,11 @@ public class PipeTest
             var rs = p1.Work(
                 (byte[] b) =>
                 {
+                    var msg = JsonSerializer.Deserialize<SyncMsg>(b);
+                    if (msg.Body == "发布完成！")
+                    {
+                        p1.Close("正常退出！");
+                    }
                     Console.WriteLine(b);
                     return true;
                 }
@@ -44,6 +49,7 @@ public class PipeTest
         lf.CreateLocalSyncServer(p2, "Test", p3);
         var rf = new RemoteSyncServerFactory();
         rf.CreateRemoteSyncServer(p4, "Test");
+        TestPipe.syncServerFactory = rf;
         var starter = new SyncMsg
         {
             Body = JsonSerializer.Serialize(new PipeSeed().TestConfig),
@@ -52,7 +58,7 @@ public class PipeTest
         };
         await p1.SendMsg(starter);
         await x;
-        if (p1.ErrResult != null)
+        if (p1.ErrResult != "正常退出！")
         {
             Assert.Fail(p1.ErrResult);
         }

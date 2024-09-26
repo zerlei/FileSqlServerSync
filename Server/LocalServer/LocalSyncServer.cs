@@ -7,7 +7,17 @@ public class LocalSyncServer
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static string TempRootFile = "C:/TempPack";
 #pragma warning restore CA2211 // Non-constant fields should not be visible
-    public StateHelpBase StateHelper;
+    private StateHelpBase StateHelper;
+
+    public void SetStateHelper(StateHelpBase helper)
+    {
+        StateHelper = helper;
+    }
+
+    public StateHelpBase GetStateHelper()
+    {
+        return StateHelper;
+    }
 
     public Config? SyncConfig;
 
