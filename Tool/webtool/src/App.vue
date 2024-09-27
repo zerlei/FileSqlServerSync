@@ -1,31 +1,44 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import MonacoEditor from 'monaco-editor-vue3';
+import { ref } from 'vue';
+const options = ref({
+
+  colorDecorators: true,
+  lineHeight: 24,
+  tabSize: 2,
+})
+// let config = {
+//   x:10,
+//   y:20
+// }
+const code = ref(`
+config = {
+  x:10,
+  y:20
+}
+`)
+function submit() {
+  var config = {}
+  // const config =  eval(code.value)
+  eval(code.value)
+  console.log(config)
+}
 </script>
 
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <h3>发布工具</h3>
+  <div>发布历史</div>
+  <div style="display: flex;">
+
+  <MonacoEditor theme="vs-dark" :options="options" language="javascript" :width="800" :height="700"
+    v-model:value="code"></MonacoEditor>
+    <div style="width: 800px;height: 700px;background-color: #1e1e1e;">
+      发布日志
+    </div>
   </div>
-  <HelloWorld msg="Vite + Vue" />
+
+
+  <button style="margin-top: 20px;" @click="submit">发布</button>
 </template>
-<script>
-</script>
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+
+<style scoped></style>
