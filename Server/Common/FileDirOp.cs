@@ -168,6 +168,37 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath) : FileDirO
 public class FileDirOpForUnpack(string srcRootPath, string dstRootPath) : FileDirOpStra
 {
     /// <summary>
+    /// 备份文件
+    /// </summary>
+    /// <param name="absolutePath"> 源文件位置，将要删除的或者替换的</param>
+    private void BacklogFile(string absolutePath)
+    {
+        var dstPath = absolutePath.Replace(DstRootPath, SrcRootPath);
+
+        var dstDirPath =
+            Path.GetDirectoryName(dstPath) ?? throw new NullReferenceException("父路径不存在！");
+        if (!Directory.Exists(dstDirPath))
+        {
+            Directory.CreateDirectory(dstDirPath);
+        }
+
+        //文件时间不会更改
+        System.IO.File.Move(absolutePath, dstPath + ".bak", true);
+    }
+
+    private void BacklogDir(string absolutePath)
+    {
+        var dstPath = absolutePath.Replace(DstRootPath, SrcRootPath);
+        var dstDirPath =
+            Path.GetDirectoryName(dstPath) ?? throw new NullReferenceException("父路径不存在！");
+        if (!Directory.Exists(dstDirPath))
+        {
+            Directory.CreateDirectory(dstDirPath);
+        }
+        Directory.Move(absolutePath, dstPath);
+    }
+
+    /// <summary>
     /// 解压缩,必须首先调用
     /// </summary>
     public static void FirstUnComparess(string dstPath, string Id)
@@ -273,17 +304,20 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath) : FileDi
 
     public override void FileModify(string absolutePath, DateTime mtime)
     {
+        BacklogFile(absolutePath);
         this.FileCreate(absolutePath, mtime);
     }
 
     public override void FileDel(string absolutePath)
     {
+        BacklogFile(absolutePath);
         System.IO.File.Delete(absolutePath);
     }
 
     public override void DirDel(Dir dir, bool IsRecursion = true)
     {
-        System.IO.Directory.Delete(dir.FormatedPath, IsRecursion);
+        BacklogDir(dir.FormatedPath);
+        //System.IO.Directory.Delete(dir.FormatedPath, IsRecursion);
     }
 }
 

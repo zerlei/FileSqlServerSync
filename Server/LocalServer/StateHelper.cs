@@ -260,6 +260,7 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
             };
             e.LocalDirInfo.ExtractInfo(e.CherryPicks, e.Excludes);
         });
+
         //将配置信息发送到remoteServer
         var options = new JsonSerializerOptions { WriteIndented = true };
         Context
@@ -284,6 +285,9 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
 
         var PackOp = new FileDirOpForPack(
             Context.NotNullSyncConfig.LocalRootPath,
+            LocalSyncServer.TempRootFile + "/" + Context.NotNullSyncConfig.Id.ToString()
+        );
+        Directory.CreateDirectory(
             LocalSyncServer.TempRootFile + "/" + Context.NotNullSyncConfig.Id.ToString()
         );
         Context.NotNullSyncConfig.DirFileConfigs.ForEach(e =>
