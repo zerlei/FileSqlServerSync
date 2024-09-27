@@ -1,14 +1,20 @@
 using LocalServer;
 
 var builder = WebApplication.CreateBuilder(args);
-ConfigurationBuilder configurationBuilder = new ();
+ConfigurationBuilder configurationBuilder = new();
 
 //添加配置文件路径
 configurationBuilder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
 
 //加载文件
 IConfiguration _configuration = configurationBuilder.Build();
-LocalSyncServer.TempRootFile = _configuration["TempDir"]??"C:/TempPack";;
+LocalSyncServer.TempRootFile = _configuration["TempDir"] ?? "C:/TempPack";
+LocalSyncServer.SqlPackageAbPath =
+    _configuration["SqlPackageAbPath"] ?? "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";
+LocalSyncServer.MsdeployAbPath =
+    _configuration["MsdeployAbPath"]
+    ?? "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe";
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -19,6 +25,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<LocalSyncServerFactory>();
 
 var app = builder.Build();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

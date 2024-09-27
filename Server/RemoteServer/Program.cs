@@ -14,6 +14,9 @@ RemoteSyncServerFactory.NamePwd =
 [
     .. (builder.Configuration.GetSection("NamePwds").Get<Tuple<string, string>[]>() ?? [])
 ];
+RemoteSyncServer.SqlPackageAbPath =
+    builder.Configuration["SqlPackageAbPath"]
+    ?? "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";
 RemoteSyncServer.TempRootFile = builder.Configuration["TempDir"] ?? "C:/TempPack";
 builder.Services.AddControllers();
 builder.Services.AddDbContext<SqliteDbContext>(opions =>

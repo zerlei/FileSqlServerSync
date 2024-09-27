@@ -27,8 +27,7 @@ public abstract class FileDirOpStra
 /// 文件目录打包
 /// </summary>
 /// <param name="dstRootPath"></param>
-public class FileDirOpForPack(string srcRootPath, string dstRootPath)
-    : FileDirOpStra
+public class FileDirOpForPack(string srcRootPath, string dstRootPath) : FileDirOpStra
 {
     /// <summary>
     /// 目标根目录
@@ -166,8 +165,7 @@ public class FileDirOpForPack(string srcRootPath, string dstRootPath)
     public override void DirDel(Dir dir, bool IsRecursion = true) { }
 }
 
-public class FileDirOpForUnpack(string srcRootPath, string dstRootPath)
-    : FileDirOpStra
+public class FileDirOpForUnpack(string srcRootPath, string dstRootPath) : FileDirOpStra
 {
     /// <summary>
     /// 解压缩,必须首先调用
@@ -196,11 +194,8 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath)
                 }
                 if (fileName != String.Empty)
                 {
-                    using (
-                        FileStream streamWriter = System.IO.File.Create(
-                            directoryName + "/" + fileName
-                        )
-                    )
+                    string fullFilePath = Path.Combine(directoryName, fileName);
+                    using (FileStream streamWriter = System.IO.File.Create(fullFilePath))
                     {
                         int size = 2048;
                         byte[] data = new byte[2048];
@@ -217,6 +212,7 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath)
                             }
                         }
                     }
+                    System.IO.File.SetLastWriteTime(fullFilePath, theEntry.DateTime);
                 }
             }
         }
@@ -277,7 +273,7 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath)
 
     public override void FileModify(string absolutePath, DateTime mtime)
     {
-        this.FileCreate(absolutePath,mtime);
+        this.FileCreate(absolutePath, mtime);
     }
 
     public override void FileDel(string absolutePath)
@@ -287,7 +283,7 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath)
 
     public override void DirDel(Dir dir, bool IsRecursion = true)
     {
-        System.IO.Directory.Delete(dir.FormatedPath,IsRecursion);
+        System.IO.Directory.Delete(dir.FormatedPath, IsRecursion);
     }
 }
 

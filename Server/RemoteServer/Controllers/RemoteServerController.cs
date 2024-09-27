@@ -187,7 +187,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
             else
             {
                 var h = new UnPackAndReleaseHelper(server);
-                server.StateHelper = h;
+                server.SetStateHelpBase(h);
                 h.UnPack();
             }
 
