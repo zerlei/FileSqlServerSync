@@ -259,15 +259,21 @@ public static class DirExtension
                 {
                     if (child is Dir childDir)
                     {
-                        fileDirOp.DirCreate(childDir, false);
-                        f(childDir, fileDirOp);
+                        if (childDir.NextOp != NextOpType.Del)
+                        {
+                            fileDirOp.DirCreate(childDir, false);
+                            f(childDir, fileDirOp);
+                        }
                     }
                 }
                 else
                 {
                     if (child is File childFile)
                     {
-                        fileDirOp.FileCreate(child.FormatedPath, childFile.MTime);
+                        if (childFile.NextOp != NextOpType.Del)
+                        {
+                            fileDirOp.FileCreate(child.FormatedPath, childFile.MTime);
+                        }
                     }
                     else
                     {

@@ -8,7 +8,8 @@ public class LocalSyncServer
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static string TempRootFile = "C:/TempPack";
     public static string SqlPackageAbPath = "sqlpackage";
-    public static string MsdeployAbPath = "msdeploy";
+
+    //public static string MsdeployAbPath = "msdeploy";
 
     //与visual studio 匹配的Msbuild 路径。在vs 中打开power shell 命令行，使用 `(get-Command -Name msbuild).Source `
     public static string MSBuildAbPath = "MSBuild";

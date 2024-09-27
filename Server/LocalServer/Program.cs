@@ -11,9 +11,10 @@ IConfiguration _configuration = configurationBuilder.Build();
 LocalSyncServer.TempRootFile = _configuration["TempDir"] ?? "C:/TempPack";
 LocalSyncServer.SqlPackageAbPath =
     _configuration["SqlPackageAbPath"] ?? "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";
-LocalSyncServer.MsdeployAbPath =
-    _configuration["MsdeployAbPath"]
-    ?? "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe";
+
+//LocalSyncServer.MsdeployAbPath =
+//    _configuration["MsdeployAbPath"]
+//    ?? "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe";
 
 // Add services to the container.
 
