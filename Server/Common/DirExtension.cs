@@ -140,7 +140,9 @@ public static class DirExtension
             {
                 lIndex_f++;
                 rIndex_f++;
-                if (l.MTime != r.MTime)
+                // 如果最新版的时间大于旧版时间超过5s才更新，文件时间在传输过程中产生了精度损失。
+                // Warrning 如果旧版文件的最后修改时间大于新版文件，将不会更新
+                if ((l.MTime - r.MTime).TotalSeconds > 5)
                 {
                     cDir.Children.Add(
                         new File

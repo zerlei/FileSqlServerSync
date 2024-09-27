@@ -7,8 +7,19 @@ public class RemoteSyncServer
 {
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static string TempRootFile = "C:/TempPack";
+    public static string SqlPackageAbPath = "SqlPackageAbPath";
 #pragma warning restore CA2211 // Non-constant fields should not be visible
-    public StateHelpBase StateHelper;
+    private StateHelpBase StateHelper;
+
+    public void SetStateHelpBase(StateHelpBase stateHelper)
+    {
+        StateHelper = stateHelper;
+    }
+
+    public StateHelpBase GetStateHelpBase()
+    {
+        return StateHelper;
+    }
 
     public Config? SyncConfig;
 

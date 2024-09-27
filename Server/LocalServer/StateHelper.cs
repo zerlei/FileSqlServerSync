@@ -150,39 +150,88 @@ public class DeployHelper(LocalSyncServer context)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                ProcessStartInfo startInfo =
+                //构建
+
+                //var OutputPath = LocalSyncServer.GetProjectOutPath(
+                //    Context.NotNullSyncConfig.LocalProjectAbsolutePath
+                //);
+                //var AbOutPath = Path.Combine(
+                //    Context.NotNullSyncConfig.LocalProjectAbsolutePath,
+                //    OutputPath
+                //);
+                ProcessStartInfo startbuildInfo =
                     new()
                     {
-                        FileName = "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe", // The command to execute (can be any command line tool)
+                        FileName = LocalSyncServer.MSBuildAbPath, // The command to execute (can be any command line tool)
                         Arguments =
-                            $" -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
+                            $" {Context.NotNullSyncConfig.LocalProjectAbsolutePath} /t:ResolveReferences"
+                            + $" /t:Compile /p:Configuration=Release /t:_CopyWebApplication  /p:OutputPath={LocalSyncServer.TempRootFile}/bin"
+                            + $" /p:WebProjectOutputDir={LocalSyncServer.TempRootFile}",
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
+                        RedirectStandardError = true,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8,
                         UseShellExecute = false, // Do not use the shell to execute the command
                         CreateNoWindow = true // Do not create a new window for the command
                     };
-                using Process process = new() { StartInfo = startInfo };
+                using Process bprocess = new() { StartInfo = startbuildInfo };
                 // Start the process
-                process.Start();
+                bprocess.Start();
 
                 // Read the output from the process
-                string output = process.StandardOutput.ReadToEnd();
+                string boutput = bprocess.StandardOutput.ReadToEnd();
 
                 // Wait for the process to exit
-                process.WaitForExit();
+                bprocess.WaitForExit();
 
-                if (process.ExitCode == 0)
+                if (bprocess.ExitCode == 0)
                 {
                     Context.LocalPipe.SendMsg(CreateMsg("本地编译成功！")).Wait();
-                    var h = new DiffFileAndPackHelper(Context);
-                    Context.SetStateHelper(h);
-                    h.DiffProcess();
                 }
                 else
                 {
-                    Context.LocalPipe.SendMsg(CreateErrMsg(output)).Wait();
-                    throw new Exception("执行发布错误，错误信息参考上一条消息！");
+                    var aTexts = boutput.Split('\n');
+                    if (aTexts.Length > 10)
+                    {
+                        boutput = string.Join('\n', aTexts.Skip(aTexts.Length - 10));
+                    }
+                    Context.LocalPipe.SendMsg(CreateErrMsg(boutput)).Wait();
+                    throw new Exception("执行编译错误，错误信息参考上一条消息！");
                 }
+                //发布
+                //ProcessStartInfo startInfo =
+                //    new()
+                //    {
+                //        FileName = LocalSyncServer.MsdeployAbPath, // The command to execute (can be any command line tool)
+                //        Arguments =
+                //            $" -verb:sync -source:contentPath={Context.NotNullSyncConfig.LocalProjectAbsolutePath} -dest:contentPath={Context.NotNullSyncConfig.LocalRootPath} -disablerule:BackupRule",
+                //        // The arguments to pass to the command (e.g., list directory contents)
+                //        RedirectStandardOutput = true, // Redirect the standard output to a string
+                //        UseShellExecute = false, // Do not use the shell to execute the command
+                //        CreateNoWindow = true // Do not create a new window for the command
+                //    };
+                //using Process process = new() { StartInfo = startInfo };
+                //// Start the process
+                //process.Start();
+
+                //// Read the output from the process
+                //string output = process.StandardOutput.ReadToEnd();
+
+                //// Wait for the process to exit
+                //process.WaitForExit();
+
+                //if (process.ExitCode == 0)
+                //{
+                //    Context.LocalPipe.SendMsg(CreateMsg("本地发布成功！")).Wait();
+                //    var h = new DiffFileAndPackHelper(Context);
+                //    Context.SetStateHelper(h);
+                //    h.DiffProcess();
+                //}
+                //else
+                //{
+                //    Context.LocalPipe.SendMsg(CreateErrMsg(output)).Wait();
+                //    throw new Exception("执行发布错误，错误信息参考上一条消息！");
+                //}
             }
             else
             {
@@ -298,8 +347,9 @@ public class DeployMSSqlHelper(LocalSyncServer context)
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe", // The command to execute (can be any command line tool)
+                        FileName = LocalSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
                         Arguments = arguments,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8,
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
                         UseShellExecute = false, // Do not use the shell to execute the command

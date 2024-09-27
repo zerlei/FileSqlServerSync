@@ -43,6 +43,12 @@ public class PipeTest
         p3.Other = p4;
         p4.Other = p3;
         LocalSyncServer.TempRootFile = "D:/FileSyncTest/stemp";
+        RemoteSyncServer.SqlPackageAbPath = "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";
+        LocalSyncServer.MsdeployAbPath =
+            "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe";
+        LocalSyncServer.SqlPackageAbPath = "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";
+        LocalSyncServer.MSBuildAbPath =
+            "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe";
         RemoteSyncServer.TempRootFile = "D:/FileSyncTest/dtemp";
         RemoteSyncServerFactory.NamePwd = [new Tuple<string, string>("Test", "t123")];
         var lf = new LocalSyncServerFactory();

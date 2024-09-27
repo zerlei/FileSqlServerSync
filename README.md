@@ -5,6 +5,10 @@
 msbuild .\HMES-H7-HNFYMF.WEB\HMES_H7_HNFYMF.WEB.csproj /t:ResolveReferences /t:Compile /t:_CopyWebApplication /p:Configuration=Release /p:WebProjectOutputDir=C:\publish /p:OutputPath=C:\publish\bin
 
 
+
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\amd64\MSBuild.exe" D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB/HMES_H7_HNFYMF.WEB.csproj /t:ResolveReferences /t:Compile /p:Configuration=Release /t:_CopyWebApplication  /p:OutputPath=D:/FileSyncTest/src/bin /p:WebProjectOutputDir=D:/FileSyncTest/src
+
+
 # 此命令是一个完整的发布命令
 
 msdeploy.exe -verb:sync -source:contentPath=D:\git\HMES-H7-HNFY\HMES-H7-HNFYMF\HMES-H7-HNFYMF.WEB -dest:contentPath=D:\git\HMES-H7-HNFY\HMES-H7-HNFYMF\release -disablerule:BackupRule

@@ -46,7 +46,7 @@ namespace ServerTest
                 {
                     var it = syncServerFactory.GetServerByName("Test");
                     var h = new UnPackAndReleaseHelper(it);
-                    it.StateHelper = h;
+                    it.SetStateHelpBase(h);
                     h.UnPack();
                 });
             });

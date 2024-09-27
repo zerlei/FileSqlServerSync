@@ -73,7 +73,7 @@ public class ConnectAuthorityHelper(RemoteSyncServer context)
         if (msg.Body == Context.Pwd)
         {
             var h = new DiffFileHelper(Context);
-            Context.StateHelper = h;
+            Context.SetStateHelpBase(h);
             Context.Pipe.SendMsg(CreateMsg("RemoteServer: 密码验证成功！"));
         }
         else
@@ -106,6 +106,13 @@ public class DiffFileHelper(RemoteSyncServer context)
                     Children = []
                 };
                 nd.ExtractInfo(e.CherryPicks, e.Excludes);
+                var nl = e.LocalDirInfo.Clone();
+                nl.ResetRootPath(
+                    Context.NotNullSyncConfig.LocalRootPath,
+                    Context.NotNullSyncConfig.RemoteRootPath
+                );
+                //var x = JsonSerializer.Serialize(nd);
+                //var x2 = JsonSerializer.Serialize(nl);
                 e.DiffDirInfo = e.LocalDirInfo.Diff(nd);
                 e.RemoteDirInfo = nd;
                 diffConfigs.Add(
@@ -114,7 +121,7 @@ public class DiffFileHelper(RemoteSyncServer context)
             }
         });
         var h = new UnPackAndReleaseHelper(Context);
-        Context.StateHelper = h;
+        Context.SetStateHelpBase(h);
         //将对比结果发送到Local
         Context.Pipe.SendMsg(CreateMsg(JsonSerializer.Serialize(diffConfigs)));
     }
@@ -131,7 +138,7 @@ public class UnPackAndReleaseHelper(RemoteSyncServer context)
         );
         Context.Pipe.SendMsg(CreateMsg("解压完成！")).Wait();
         var h = new FinallyPublishHelper(Context);
-        Context.StateHelper = h;
+        Context.SetStateHelpBase(h);
         h.FinallyPublish();
     }
 
@@ -156,8 +163,8 @@ public class FinallyPublishHelper(RemoteSyncServer context)
                 ProcessStartInfo startInfo =
                     new()
                     {
-                        FileName = "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe", // The command to execute (can be any command line tool)
-                        Arguments = arguments,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8,
+                        FileName = RemoteSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
                         UseShellExecute = false, // Do not use the shell to execute the command
