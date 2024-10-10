@@ -11,6 +11,7 @@
   "dependencies": {
     "monaco-editor": "0.33.0",
     "monaco-editor-vue3": "^0.1.10",
+    "stringify-object": "^5.0.0",
     "vue": "^3.4.21"
   },
   "devDependencies": {
