@@ -23,7 +23,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
                 {
                     var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
                     var pipeLine = new WebSocPipeLine<WebSocket>(webSocket, true);
-                    Factory.CreateRemoteSyncServer(pipeLine, Name);
+                    await Factory.CreateRemoteSyncServer(pipeLine, Name);
                 }
                 else
                 {

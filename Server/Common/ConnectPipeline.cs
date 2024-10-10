@@ -55,7 +55,7 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
             );
             var fileContent = new ProgressStreamContent(fileStream, progress);
             content.Add(fileContent, "file", Path.GetFileName(filePath));
-            var it = await client.PostAsync(url + "/UploadPacked", content);
+            var it = await client.PostAsync("http://" + url + "/UploadPacked", content);
             if (it.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 throw new Exception(it.Content.ReadAsStringAsync().Result);
@@ -72,7 +72,7 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
         if (Socket is ClientWebSocket CSocket)
         {
             //连接失败会抛出异常
-            await CSocket.ConnectAsync(new Uri(addr), CancellationToken.None);
+            await CSocket.ConnectAsync(new Uri("ws://" + addr), CancellationToken.None);
             yield return 0;
         }
         // 从controller 来，这个已经连接上了
@@ -121,6 +121,14 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
     {
         if (Socket.State == WebSocketState.Open)
         {
+            //await SendMsg(
+            //    new SyncMsg
+            //    {
+            //        Type = SyncMsgType.Error,
+            //        Step = SyncProcessStep.Finally,
+            //        Body = CloseReason ?? ""
+            //    }
+            //);
             await Socket.CloseAsync(
                 WebSocketCloseStatus.NormalClosure,
                 CloseReason,

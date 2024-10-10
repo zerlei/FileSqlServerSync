@@ -105,24 +105,24 @@ public class LocalSyncServer
         StateHelper = new ConnectAuthorityHelper(this);
         Name = name;
         RemotePipe = remotePipe;
+    }
 
-        Task.Run(async () =>
+    public async Task Connect()
+    {
+        try
         {
-            try
-            {
-                var rs = LocalPipe.Work(
-                    (byte[] b) =>
-                    {
-                        return StateHelper.ReceiveLocalMsg(b);
-                    }
-                );
-                await foreach (var r in rs) { }
-            }
-            catch (Exception e)
-            {
-                Close(e.Message);
-            }
-        });
+            var rs = LocalPipe.Work(
+                (byte[] b) =>
+                {
+                    return StateHelper.ReceiveLocalMsg(b);
+                }
+            );
+            await foreach (var r in rs) { }
+        }
+        catch (Exception e)
+        {
+            Close(e.Message);
+        }
     }
 
     public void Close(string? CloseReason)

@@ -61,24 +61,24 @@ public class RemoteSyncServer
         Name = name;
         Pwd = pwd;
         StateHelper = new ConnectAuthorityHelper(this);
+    }
 
-        Task.Run(async () =>
+    public async Task Connect()
+    {
+        try
         {
-            try
-            {
-                var rs = Pipe.Work(
-                    (byte[] b) =>
-                    {
-                        return StateHelper.ReceiveMsg(b);
-                    }
-                );
-                await foreach (var r in rs) { }
-            }
-            catch (Exception e)
-            {
-                Close(e.Message);
-            }
-        });
+            var rs = Pipe.Work(
+                (byte[] b) =>
+                {
+                    return StateHelper.ReceiveMsg(b);
+                }
+            );
+            await foreach (var r in rs) { }
+        }
+        catch (Exception e)
+        {
+            Close(e.Message);
+        }
     }
 
     public void Close(string? CloseReason)
