@@ -10,7 +10,7 @@ public class RemoteSyncServerFactory
     public static List<Tuple<string, string>> NamePwd = [];
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 
-    public void CreateRemoteSyncServer(AbsPipeLine pipeLine, string Name)
+    public async Task CreateRemoteSyncServer(AbsPipeLine pipeLine, string Name)
     {
         var pwd =
             NamePwd.Where(x => x.Item1 == Name).FirstOrDefault()
@@ -20,6 +20,7 @@ public class RemoteSyncServerFactory
         {
             Servers.Add(server);
         }
+        await server.Connect();
     }
 
     private readonly List<RemoteSyncServer> Servers = [];

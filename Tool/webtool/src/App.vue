@@ -3,6 +3,7 @@ import MonacoEditor from 'monaco-editor-vue3';
 import HistoryBtn from "./HistoryBtn.vue"
 import { ref, onMounted, computed } from 'vue';
 import stringifyObject from 'stringify-object';
+import ConnectPipe from './connect.js'
 const cacheConfig = ref({})
 const options = ref({
 
@@ -13,7 +14,7 @@ const options = ref({
 const code = ref(`
 config = {
   Name: "Test",
-  RemoteUrl: "D:/FileSyncTest/dtemp",
+  RemoteUrl: "127.0.0.1:6819",
   RemotePwd: "t123",
   IsDeployDb: false,
   IsDeployProject: false,
@@ -59,6 +60,9 @@ function submit() {
     }
     cacheConfig.value[config.Name] = config
     updateStorage()
+  var p =  new ConnectPipe()
+    p.OpenPipe(config,()=>{})
+
   }
   catch (e) {
     window.alert(e)
@@ -76,15 +80,17 @@ const history = computed(() => {
   return Object.keys(cacheConfig.value)
 })
 
-function publishCB(MsgIt) {
-
-}
 function onDel(name) {
   delete cacheConfig.value[name]
   updateStorage()
 }
 function updateStorage() {
   localStorage.setItem('config', JSON.stringify(cacheConfig.value))
+}
+
+
+function publishCB(MsgIt) {
+
 }
 onMounted(() => {
   var cacheConfigStr = localStorage.getItem('config')

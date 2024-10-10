@@ -5,22 +5,25 @@ class ConnectPipe {
     //Id,Msgtype,callback
     // this.#websocket = new WebSocket(`ws://${window.location.host}`)
   }
-  #OpenPipe(config, MsgCb) {
+  OpenPipe(config, MsgCb) {
     this.config = config;
 
-    var webSocUrl = `ws://${window.location.host}:${window.location.port}/websoc?Name=${config.Name}`
+    // var webSocUrl = `ws://${window.location.host}:${window.location.port}/websoc?Name=${config.Name}`
+    var webSocUrl = "ws://127.0.0.1:6818/websoc?Name=Test"
     this.#websocket = new WebSocket(webSocUrl);
     this.#websocket.onopen = (event) => {
     //   console.warn("websocket connected!");
       this.#websocket.send(JSON.stringify(this.config));
     };
     this.#websocket.onmessage = (event) => {
-
-        
+      console.log(event.data)
 
     };
-    this.#websocket.onclose = (event) => {};
+    this.#websocket.onclose = (event) => {
+      console.warn(event.reason)
+    };
     this.#websocket.onerror = (e) => {
+      console.error(e)
       if (this.#websocket.readyState) {
         //bla bla
       }
@@ -28,6 +31,5 @@ class ConnectPipe {
   }
 }
 
-let cPipe = new ConnectPipe();
 
-export default cPipe;
+export default ConnectPipe;
