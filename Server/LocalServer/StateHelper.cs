@@ -165,8 +165,8 @@ public class DeployHelper(LocalSyncServer context)
                         FileName = LocalSyncServer.MSBuildAbPath, // The command to execute (can be any command line tool)
                         Arguments =
                             $" {Context.NotNullSyncConfig.LocalProjectAbsolutePath} /t:ResolveReferences"
-                            + $" /t:Compile /p:Configuration=Release /t:_CopyWebApplication  /p:OutputPath={LocalSyncServer.TempRootFile}/bin"
-                            + $" /p:WebProjectOutputDir={LocalSyncServer.TempRootFile}",
+                            + $" /t:Compile /p:Configuration=Release /t:_CopyWebApplication  /p:OutputPath={Context.NotNullSyncConfig.LocalRootPath}/bin"
+                            + $" /p:WebProjectOutputDir={Context.NotNullSyncConfig.LocalRootPath}",
                         // The arguments to pass to the command (e.g., list directory contents)
                         RedirectStandardOutput = true, // Redirect the standard output to a string
                         RedirectStandardError = true,
@@ -187,6 +187,9 @@ public class DeployHelper(LocalSyncServer context)
                 if (bprocess.ExitCode == 0)
                 {
                     Context.LocalPipe.SendMsg(CreateMsg("本地编译成功！")).Wait();
+                    var h = new DiffFileAndPackHelper(Context);
+                    Context.SetStateHelper(h);
+                    h.DiffProcess();
                 }
                 else
                 {
