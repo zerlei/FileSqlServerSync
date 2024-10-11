@@ -14,6 +14,13 @@ RemoteSyncServerFactory.NamePwd =
 [
     .. (builder.Configuration.GetSection("NamePwds").Get<Tuple<string, string>[]>() ?? [])
 ];
+foreach (var x in builder.Configuration.GetSection("NamePwds").GetChildren())
+{
+    var it = x.GetChildren();
+    RemoteSyncServerFactory.NamePwd.Add(
+        new Tuple<string, string>(it.ElementAt(0).Value ?? "", it.ElementAt(1).Value ?? "")
+    );
+}
 RemoteSyncServer.SqlPackageAbPath =
     builder.Configuration["SqlPackageAbPath"]
     ?? "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";

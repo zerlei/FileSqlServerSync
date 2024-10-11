@@ -55,7 +55,7 @@ namespace LocalServer.Controllers
                         await Factory.CreateLocalSyncServer(
                             pipeLine,
                             Name,
-                            new WebSocPipeLine<ClientWebSocket>(new ClientWebSocket(), false)
+                            new WebSocPipeLine<ClientWebSocket>(new ClientWebSocket(), true)
                         );
                     }
                     else

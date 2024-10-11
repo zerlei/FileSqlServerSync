@@ -6,30 +6,45 @@ class ConnectPipe {
     // this.#websocket = new WebSocket(`ws://${window.location.host}`)
   }
   OpenPipe(config, MsgCb) {
-    this.config = config;
-
     // var webSocUrl = `ws://${window.location.host}:${window.location.port}/websoc?Name=${config.Name}`
-    var webSocUrl = "ws://127.0.0.1:6818/websoc?Name=Test"
+    var webSocUrl = "ws://127.0.0.1:6818/websoc?Name=Test";
     this.#websocket = new WebSocket(webSocUrl);
     this.#websocket.onopen = (event) => {
-    //   console.warn("websocket connected!");
-      this.#websocket.send(JSON.stringify(this.config));
+      var starter = {
+        Body: JSON.stringify(config),
+        Type: 1,
+        Step: 1,
+      };
+      //   console.warn("websocket connected!");
+      this.#websocket.send(JSON.stringify(starter));
     };
     this.#websocket.onmessage = (event) => {
-      console.log(event.data)
-
+      // console.log(event.data);
+      MsgCb(JSON.parse(event.data))
     };
     this.#websocket.onclose = (event) => {
-      console.warn(event.reason)
+
+      console.warn(event)
+      MsgCb({
+        Type: 0,
+        Step: 8,
+        Body:event.reason
+      })
+      
     };
     this.#websocket.onerror = (e) => {
-      console.error(e)
-      if (this.#websocket.readyState) {
-        //bla bla
-      }
+      console.error(e);
+      MsgCb({
+        Type: 0,
+        Body: "异常错误，查看 Console",
+        Step: 7,
+      });
     };
   }
-}
+  ClosePipe()  {
+    this.#websocket.close();
+  }
 
+}
 
 export default ConnectPipe;
