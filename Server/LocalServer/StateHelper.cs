@@ -124,7 +124,7 @@ public class ConnectAuthorityHelper(LocalSyncServer context)
             }
             catch (Exception e)
             {
-                await Context.LocalPipe.Close(e.Message);
+                Context.Close(e.Message);
             }
         });
     }
@@ -301,6 +301,7 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
                 e.DiffDirInfo.WriteByThisInfo(PackOp);
             }
         });
+        Context.LocalPipe.SendMsg(CreateMsg("文件差异比较成功！")).Wait();
         var n = new DeployMSSqlHelper(Context);
         Context.SetStateHelper(n);
         n.PackSqlServerProcess();
@@ -414,8 +415,6 @@ public class UploadPackedHelper(LocalSyncServer context)
             )
             .Wait();
         Context.LocalPipe.SendMsg(CreateMsg("上传完成！")).Wait();
-
-        var x = Context.GetStateHelper().Step;
     }
 
     protected override void HandleLocalMsg(SyncMsg msg)

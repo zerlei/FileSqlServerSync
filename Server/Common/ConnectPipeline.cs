@@ -27,7 +27,7 @@ public abstract class AbsPipeLine(bool isAES)
     /// <returns></returns>
     public abstract Task SendMsg(SyncMsg msg);
 
-    public abstract Task UploadFile(string filePath, string url, Func<double, bool> progressCb);
+    public abstract Task UploadFile(string url, string filePath, Func<double, bool> progressCb);
     protected readonly bool IsAES = isAES;
 }
 
@@ -37,33 +37,27 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
     public readonly TSocket Socket = socket;
 
     public override async Task UploadFile(
-        string filePath,
         string url,
+        string filePath,
         Func<double, bool> progressCb
     )
     {
-        if (Socket is HttpClient)
-        {
-            using var client = new HttpClient();
-            using var content = new MultipartFormDataContent();
-            using var fileStream = new FileStream(filePath, FileMode.Open);
-            var progress = new Progress<double>(
-                (current) =>
-                {
-                    progressCb(current);
-                }
-            );
-            var fileContent = new ProgressStreamContent(fileStream, progress);
-            content.Add(fileContent, "file", Path.GetFileName(filePath));
-            var it = await client.PostAsync("http://" + url + "/UploadPacked", content);
-            if (it.StatusCode != System.Net.HttpStatusCode.OK)
+        //throw new Exception("sdfsdf");
+        using var client = new HttpClient();
+        using var content = new MultipartFormDataContent();
+        using var fileStream = new FileStream(filePath, FileMode.Open);
+        var progress = new Progress<double>(
+            (current) =>
             {
-                throw new Exception(it.Content.ReadAsStringAsync().Result);
+                progressCb(current);
             }
-        }
-        else
+        );
+        //var fileContent = new ProgressStreamContent(fileStream, progress);
+        content.Add(new StreamContent(fileStream), "file", Path.GetFileName(filePath));
+        var it = await client.PostAsync("http://" + url + "/UploadFile", content);
+        if (it.StatusCode != System.Net.HttpStatusCode.OK)
         {
-            throw new NotSupportedException("只支持HttpClient!");
+            throw new Exception(it.Content.ReadAsStringAsync().Result);
         }
     }
 
@@ -106,7 +100,9 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
                 System.Buffer.BlockCopy(buffer, 0, nbuffer, 0, receiveResult.Count);
                 if (IsAES)
                 {
-                    var nnbuffer = AESHelper.DecryptStringFromBytes_Aes(buffer);
+                    //var msg1 = Encoding.UTF8.GetString(nbuffer);
+                    //var n1Buffler = Encoding.UTF8.GetBytes(msg1);
+                    var nnbuffer = AESHelper.DecryptStringFromBytes_Aes(nbuffer);
                     receiveCb(Encoding.UTF8.GetBytes(nnbuffer));
                 }
                 else
@@ -129,24 +125,55 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
             //        Body = CloseReason ?? ""
             //    }
             //);
-            await Socket.CloseAsync(
-                WebSocketCloseStatus.NormalClosure,
-                CloseReason,
-                CancellationToken.None
-            );
+            if (Encoding.UTF8.GetBytes(CloseReason ?? "").Length > 120)
+            {
+                await SendMsg(
+                    new SyncMsg
+                    {
+                        Type = SyncMsgType.Error,
+                        Step = SyncProcessStep.CloseError,
+                        Body = CloseReason ?? ""
+                    }
+                );
+                await Socket.CloseAsync(
+                    WebSocketCloseStatus.NormalClosure,
+                    "查看上一条错误信息！",
+                    CancellationToken.None
+                );
+            }
+            else
+            {
+                await Socket.CloseAsync(
+                    WebSocketCloseStatus.NormalClosure,
+                    CloseReason,
+                    CancellationToken.None
+                );
+            }
         }
     }
 
     public override async Task SendMsg(SyncMsg msg)
     {
         string msgStr = JsonSerializer.Serialize(msg);
-        await Socket.SendAsync(
-            IsAES
-                ? AESHelper.EncryptStringToBytes_Aes(msgStr)
-                : new ArraySegment<byte>(Encoding.UTF8.GetBytes(msgStr)),
-            WebSocketMessageType.Text,
-            true,
-            CancellationToken.None
-        );
+        var it = AESHelper.EncryptStringToBytes_Aes(msgStr);
+        //var xx = new ArraySegment<byte>(it);
+        if (IsAES)
+        {
+            await Socket.SendAsync(
+                new ArraySegment<byte>(it),
+                WebSocketMessageType.Binary,
+                true,
+                CancellationToken.None
+            );
+        }
+        else
+        {
+            await Socket.SendAsync(
+                new ArraySegment<byte>(Encoding.UTF8.GetBytes(msgStr)),
+                WebSocketMessageType.Text,
+                true,
+                CancellationToken.None
+            );
+        }
     }
 }

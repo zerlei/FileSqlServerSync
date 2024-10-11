@@ -24,6 +24,8 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
                     var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
                     var pipeLine = new WebSocPipeLine<WebSocket>(webSocket, true);
                     await Factory.CreateRemoteSyncServer(pipeLine, Name);
+
+                    var x = 11;
                 }
                 else
                 {
@@ -195,10 +197,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
         }
         catch (Exception ex)
         {
-            return StatusCode(
-                500,
-                new { IsSuccess = false, Message = $"Internal server error: {ex.Message}" }
-            );
+            return StatusCode(500, new { IsSuccess = false, Message = $"上传文件失败: {ex.Message}" });
         }
     }
 }

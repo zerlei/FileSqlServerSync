@@ -11,6 +11,9 @@ const options = ref({
   lineHeight: 24,
   tabSize: 2,
 })
+
+let Pipe = null
+const Msgs = ref([])
 const code = ref(`
 config = {
   Name: "Test",
@@ -51,7 +54,31 @@ config = {
   ],
 };
 `)
+var CStatus = ref('None')
+function publishCB(MsgIt) {
+
+  if (MsgIt.Type == 2) {
+    Msgs.value[Msgs.value.length - 1] = MsgIt
+  } else {
+    Msgs.value.push(MsgIt)
+  }
+  if (MsgIt.Step == 6) {
+    if (MsgIt.Body == "发布完成！") {
+      CStatus.value = 'Success'
+      Pipe.ClosePipe()
+      window.alert("正确：发布完成！")
+    }
+  }
+  if (MsgIt.Step == 8) {
+    if (CStatus.value != "Success") {
+      window.alert("失败：请查看错误信息！")
+    }
+    CStatus.value = "None"
+  }
+
+}
 function submit() {
+  Msgs.value = []
   var config = {}
   try {
     eval(code.value)
@@ -60,8 +87,9 @@ function submit() {
     }
     cacheConfig.value[config.Name] = config
     updateStorage()
-  var p =  new ConnectPipe()
-    p.OpenPipe(config,()=>{})
+    Pipe = new ConnectPipe()
+    Pipe.OpenPipe(config, publishCB)
+    CStatus.value = "Process"
 
   }
   catch (e) {
@@ -89,9 +117,6 @@ function updateStorage() {
 }
 
 
-function publishCB(MsgIt) {
-
-}
 onMounted(() => {
   var cacheConfigStr = localStorage.getItem('config')
   if (cacheConfigStr) {
@@ -111,11 +136,17 @@ onMounted(() => {
       v-model:value="code"></MonacoEditor>
     <div style="width: 800px;height: 700px;background-color: #1e1e1e;">
       发布日志
+
+      <p style="text-align: left;border: 1px solid gray;margin: 5px;" v-for="msg in Msgs">
+        <span :style="{ width: '100px', color: msg.Step > 6 ? 'red' : 'green' }">[{{ msg.Step
+          > 6 ? msg.Step > 7 ? "关闭" : "错误" : `${msg.Step}/${6}`}}]</span>
+        <span style="margin-left: 5px ;">{{ msg.Body }}</span>
+      </p>
     </div>
   </div>
 
 
-  <button style="margin-top: 20px;" @click="submit">发布</button>
+  <button :disabled="CStatus != 'None'" style="margin-top: 20px;" @click="submit">发布</button>
 </template>
 
 <style scoped></style>
