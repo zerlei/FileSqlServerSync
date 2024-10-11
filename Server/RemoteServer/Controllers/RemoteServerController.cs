@@ -165,7 +165,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
     }
 
     [HttpPost("/UploadFile")]
-    public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string Id)
+    public async Task<IActionResult> UploadFile(IFormFile file)
     {
         try
         {
@@ -173,15 +173,14 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
             {
                 throw new Exception("文件不存在！");
             }
-            var uploadPath = Path.Combine(RemoteSyncServer.TempRootFile, Id);
-            if (!Directory.Exists(uploadPath))
-                Directory.CreateDirectory(uploadPath);
-            var filePath = Path.Combine(uploadPath, file.FileName);
+            if (!Directory.Exists(RemoteSyncServer.TempRootFile))
+                Directory.CreateDirectory(RemoteSyncServer.TempRootFile);
+            var filePath = Path.Combine(RemoteSyncServer.TempRootFile, file.FileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }
-            var server = Factory.GetServerById(Id);
+            var server = Factory.GetServerById(file.FileName.Split('.').First());
             if (server == null)
             {
                 throw new Exception("不存在的Id！");

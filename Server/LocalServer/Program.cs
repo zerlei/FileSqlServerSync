@@ -11,6 +11,9 @@ IConfiguration _configuration = configurationBuilder.Build();
 LocalSyncServer.TempRootFile = _configuration["TempDir"] ?? "C:/TempPack";
 LocalSyncServer.SqlPackageAbPath =
     _configuration["SqlPackageAbPath"] ?? "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe";
+LocalSyncServer.MSBuildAbPath =
+    _configuration["MSBuildAbPath"]
+    ?? "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe";
 
 //LocalSyncServer.MsdeployAbPath =
 //    _configuration["MsdeployAbPath"]

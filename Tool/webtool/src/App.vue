@@ -66,16 +66,15 @@ function publishCB(MsgIt) {
     if (MsgIt.Body == "发布完成！") {
       CStatus.value = 'Success'
       Pipe.ClosePipe()
-      window.alert("正确：发布完成！")
+      dialogShow("正确：发布完成！")
     }
   }
   if (MsgIt.Step == 8) {
     if (CStatus.value != "Success") {
-      window.alert("失败：请查看错误信息！")
+      dialogShow("失败：请查看错误信息！")
     }
     CStatus.value = "None"
   }
-
 }
 function submit() {
   Msgs.value = []
@@ -93,7 +92,7 @@ function submit() {
 
   }
   catch (e) {
-    window.alert(e)
+    dialogShow(e)
   }
 }
 function onLoad(name) {
@@ -123,6 +122,15 @@ onMounted(() => {
     cacheConfig.value = JSON.parse(cacheConfigStr)
   }
 })
+
+const dMsg = ref('') 
+function dialogClose() {
+  document.getElementById('dialog').close()
+}
+function dialogShow(msg) {
+  dMsg.value = msg
+  document.getElementById('dialog').showModal()
+}
 </script>
 
 <template>
@@ -144,6 +152,10 @@ onMounted(() => {
       </p>
     </div>
   </div>
+  <dialog id="dialog">
+    <p>{{ dMsg }}</p>
+    <button @click="dialogClose">关闭</button>
+  </dialog>
 
 
   <button :disabled="CStatus != 'None'" style="margin-top: 20px;" @click="submit">发布</button>

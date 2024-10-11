@@ -13,8 +13,8 @@ public class PipeSeed : IDisposable
             Name = "Test",
             RemoteUrl = "D:/FileSyncTest/dtemp",
             RemotePwd = "t123",
-            IsDeployDb = false,
-            IsDeployProject = false,
+            IsDeployDb = true,
+            IsDeployProject = true,
             LocalProjectAbsolutePath = "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
             LocalRootPath = "D:/FileSyncTest/src",
 

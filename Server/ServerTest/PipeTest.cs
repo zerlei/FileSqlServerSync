@@ -52,9 +52,9 @@ public class PipeTest
         RemoteSyncServer.TempRootFile = "D:/FileSyncTest/dtemp";
         RemoteSyncServerFactory.NamePwd = [new Tuple<string, string>("Test", "t123")];
         var lf = new LocalSyncServerFactory();
-        var task1 = Task.Run(() =>
+        var task1 = Task.Run(async () =>
         {
-            lf.CreateLocalSyncServer(p2, "Test", p3).RunSynchronously();
+            await lf.CreateLocalSyncServer(p2, "Test", p3);
         });
 
         var rf = new RemoteSyncServerFactory();
