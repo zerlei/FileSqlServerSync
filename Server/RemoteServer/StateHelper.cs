@@ -6,7 +6,6 @@ using Common;
 
 namespace RemoteServer;
 
-
 public abstract class StateHelpBase(
     RemoteSyncServer context,
     SyncProcessStep step = SyncProcessStep.Connect
@@ -132,7 +131,11 @@ public class UnPackAndReleaseHelper(RemoteSyncServer context)
         Context.Pipe.SendMsg(CreateMsg("解压完成！")).Wait();
         var h = new FinallyPublishHelper(Context);
         Context.SetStateHelpBase(h);
-        h.FinallyPublish();
+        Context.Pipe.SendMsg(h.CreateMsg("将要发布数据库，可能时间会较长！")).Wait();
+        Task.Run(() =>
+        {
+            h.FinallyPublish();
+        });
     }
 
     protected override void HandleMsg(SyncMsg msg) { }
@@ -144,42 +147,43 @@ public class FinallyPublishHelper(RemoteSyncServer context)
     public void FinallyPublish()
     {
         // 发布数据库
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (Context.NotNullSyncConfig.IsDeployDb)
+        {
+            var arguments =
+                $" /Action:Publish  /SourceFile:{RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id}.dacpac"
+                + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
+                + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True";
+
+            ProcessStartInfo startInfo =
+                new()
+                {
+                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    Arguments = arguments,
+                    FileName = RemoteSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
+                    // The arguments to pass to the command (e.g., list directory contents)
+                    RedirectStandardOutput = true, // Redirect the standard output to a string
+                    UseShellExecute = false, // Do not use the shell to execute the command
+                    CreateNoWindow = true // Do not create a new window for the command
+                };
+            using Process process = new() { StartInfo = startInfo };
+            // Start the process
+            process.Start();
+
+            // Read the output from the process
+            string output = process.StandardOutput.ReadToEnd();
+
+            // Wait for the process to exit
+            process.WaitForExit();
+
+            if (process.ExitCode == 0)
             {
-                var arguments =
-                    $" /Action:Publish  /SourceFile:{RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}/{Context.NotNullSyncConfig.Id}.dacpac"
-                    + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
-                    + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True";
-
-                ProcessStartInfo startInfo =
-                    new()
-                    {
-                        StandardOutputEncoding = System.Text.Encoding.UTF8,
-                        FileName = RemoteSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
-                        // The arguments to pass to the command (e.g., list directory contents)
-                        RedirectStandardOutput = true, // Redirect the standard output to a string
-                        UseShellExecute = false, // Do not use the shell to execute the command
-                        CreateNoWindow = true // Do not create a new window for the command
-                    };
-                using Process process = new() { StartInfo = startInfo };
-                // Start the process
-                process.Start();
-
-                // Read the output from the process
-                string output = process.StandardOutput.ReadToEnd();
-
-                // Wait for the process to exit
-                process.WaitForExit();
-
-                if (process.ExitCode == 0)
-                {
-                    Context.Pipe.SendMsg(CreateMsg("数据库发布成功！")).Wait();
-                }
-                else
-                {
-                    Context.Pipe.SendMsg(CreateErrMsg(output)).Wait();
-                    throw new Exception("执行发布错误，错误信息参考上一条消息！");
-                }
+                Context.Pipe.SendMsg(CreateMsg("数据库发布成功！")).Wait();
+            }
+            else
+            {
+                Context.Pipe.SendMsg(CreateErrMsg(output)).Wait();
+                throw new Exception("执行发布错误，错误信息参考上一条消息！");
+            }
         }
         else
         {
