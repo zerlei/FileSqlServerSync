@@ -10,10 +10,6 @@ ConfigurationBuilder configurationBuilder = new();
 // Add services to the container.
 
 //添加配置文件路径
-RemoteSyncServerFactory.NamePwd =
-[
-    .. (builder.Configuration.GetSection("NamePwds").Get<Tuple<string, string>[]>() ?? [])
-];
 foreach (var x in builder.Configuration.GetSection("NamePwds").GetChildren())
 {
     var it = x.GetChildren();

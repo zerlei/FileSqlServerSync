@@ -15,7 +15,9 @@ namespace ServerTest
         public TestPipe? Other;
         public string? ErrResult;
         public string Id = id;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         public static RemoteSyncServerFactory syncServerFactory;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         public override async IAsyncEnumerable<int> Work(
             Func<byte[], bool> receiveCb,
@@ -44,7 +46,7 @@ namespace ServerTest
                 //}
                 Task.Run(() =>
                 {
-                    var it = syncServerFactory.GetServerByName("Test");
+                    var it = syncServerFactory.GetServerByName("Test")?? throw new NullReferenceException("找不到服务名称！");
                     var h = new UnPackAndReleaseHelper(it);
                     it.SetStateHelpBase(h);
                     h.UnPack();
