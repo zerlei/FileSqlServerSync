@@ -36,6 +36,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+DefaultFilesOptions defops = new DefaultFilesOptions();
+defops.DefaultFileNames.Clear();
+defops.DefaultFileNames.Add("index.html");
+app.UseDefaultFiles(defops);
+app.UseStaticFiles();
 app.UseWebSockets();
 app.UseAuthorization();
 app.Urls.Clear();
