@@ -10,36 +10,11 @@ namespace LocalServer.Controllers
     {
         private readonly LocalSyncServerFactory Factory = factory;
 
-        private static async Task Echo(WebSocket webSocket)
-        {
-            var buffer = new byte[1024 * 4];
-            var receiveResult = await webSocket.ReceiveAsync(
-                new ArraySegment<byte>(buffer),
-                CancellationToken.None
-            );
-
-            while (!receiveResult.CloseStatus.HasValue)
-            {
-                await webSocket.SendAsync(
-                    new ArraySegment<byte>(buffer, 0, receiveResult.Count),
-                    receiveResult.MessageType,
-                    receiveResult.EndOfMessage,
-                    CancellationToken.None
-                );
-
-                receiveResult = await webSocket.ReceiveAsync(
-                    new ArraySegment<byte>(buffer),
-                    CancellationToken.None
-                );
-            }
-
-            await webSocket.CloseAsync(
-                receiveResult.CloseStatus.Value,
-                receiveResult.CloseStatusDescription,
-                CancellationToken.None
-            );
-        }
-
+        /// <summary>
+        ///  websoc 连接入口
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <returns></returns>
         [Route("/websoc")]
         public async Task WebsocketConnection(string Name)
         {
@@ -50,8 +25,8 @@ namespace LocalServer.Controllers
                     if (Factory.GetServerByName(Name) == null)
                     {
                         var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                        //await Echo(webSocket);
                         var pipeLine = new WebSocPipeLine<WebSocket>(webSocket, false);
+                        //必须在此保留连接的上下文，否则 websocket 就直接断了。。。微软 这个设计措不及防
                         await Factory.CreateLocalSyncServer(
                             pipeLine,
                             Name,
@@ -75,18 +50,18 @@ namespace LocalServer.Controllers
             }
         }
 
-        [Route("/macaddr")]
-        public string GetMacAddress()
-        {
-            NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
-            string macaddrs = "";
-            foreach (NetworkInterface nic in nics)
-            {
-                PhysicalAddress physicalAddress = nic.GetPhysicalAddress();
-                macaddrs += physicalAddress.ToString() + ";";
-            }
-            return macaddrs;
-        }
-        //TODO 是否在本地记载同步日志？
+        // [Route("/macaddr")]
+        // public string GetMacAddress()
+        // {
+        //     NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+        //     string macaddrs = "";
+        //     foreach (NetworkInterface nic in nics)
+        //     {
+        //         PhysicalAddress physicalAddress = nic.GetPhysicalAddress();
+        //         macaddrs += physicalAddress.ToString() + ";";
+        //     }
+        //     return macaddrs;
+        // }
+        // //TODO 是否在本地记载同步日志？
     }
 }

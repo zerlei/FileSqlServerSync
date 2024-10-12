@@ -3,7 +3,7 @@ namespace Common;
 public class DirFileConfig
 {
     /// <summary>
-    /// 相对路径
+    /// 相对路径,与根路径拼成一个完整的路径，注意 "/" 不要缺少
     /// </summary>
     public required string DirPath { get; set; }
 
@@ -17,9 +17,17 @@ public class DirFileConfig
     /// </summary>
     public List<string>? CherryPicks { get; set; }
 
-    ///
+    /// <summary>
+    /// 本地文件信息，也是即将发布的文件信息，通常是最新的版本
+    /// </summary>
     public Dir? LocalDirInfo { get; set; }
+    /// <summary>
+    /// 差异文件信息
+    /// </summary>
     public Dir? DiffDirInfo { get; set; }
+    /// <summary>
+    /// 远程文件信息，通常是较旧的版本
+    /// </summary>
     public Dir? RemoteDirInfo { get; set; }
 }
 
@@ -63,6 +71,9 @@ public class Config
     /// </summary>
     public required string Name { get; set; }
 
+    /// <summary>
+    /// 本次发布的唯一id
+    /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>

@@ -7,6 +7,10 @@ public class RemoteSyncServerFactory
     private readonly object Lock = new();
 
 #pragma warning disable CA2211 // Non-constant fields should not be visible
+
+    /// <summary>
+    /// 发布的名称和密码
+    /// </summary>
     public static List<Tuple<string, string>> NamePwd = [];
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 

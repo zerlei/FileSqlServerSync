@@ -1,5 +1,8 @@
 namespace Common;
 
+/// <summary>
+/// Dir比较方法
+/// </summary>
 public static class DirExtension
 {
     /// <summary>
@@ -248,6 +251,13 @@ public static class DirExtension
         return cDir;
     }
 
+
+    /// <summary>
+    /// 根据Dirobject记录的信息，写入磁盘
+    /// </summary>
+    /// <param name="thisDir"></param>
+    /// <param name="fileDirOp"> 文件操作类,它是如何写入文件的方法</param>
+    /// <exception cref="ArgumentException"></exception>
     public static void WriteByThisInfo(this Dir thisDir, FileDirOpStra fileDirOp)
     {
         static void f(Dir dir, FileDirOpStra fileDirOp)
@@ -285,6 +295,13 @@ public static class DirExtension
         f(thisDir, fileDirOp);
     }
 
+    /// <summary>
+    ///  从文件夹中提取文件信息
+    /// </summary>
+    /// <param name="thisDir"></param>
+    /// <param name="cherryPicks">只提取这些信息，最高级别</param>
+    /// <param name="exculdes">忽略这些文件信息</param>
+    /// <exception cref="NotSupportedException"></exception>
     public static void ExtractInfo(
         this Dir thisDir,
         List<string>? cherryPicks = null,
@@ -334,7 +351,12 @@ public static class DirExtension
             }
         }
     }
-
+    /// <summary>
+    /// 添加一个子对象,这个不包含文件或文件夹的创建
+    /// </summary>
+    /// <param name="thisDir"></param>
+    /// <param name="child"></param>
+    /// <exception cref="ArgumentException"></exception>
     public static void AddChild(this Dir thisDir, AFileOrDir child)
     {
         if (child.FormatedPath[..thisDir.FormatedPath.Length] != thisDir.FormatedPath)
@@ -371,6 +393,16 @@ public static class DirExtension
         }
     }
 
+
+    /// <summary>
+    /// 合并diffdir中的内容
+    /// </summary>
+    /// <param name="thisDir"></param>
+    /// <param name="diffdir"></param>
+    /// <param name="IsUpdateObject">是否更新对象</param>
+    /// <param name="IsUpdateDirFile">是否更新文件夹和文件</param>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="NotImplementedException"></exception>
     public static void Combine(
         this Dir thisDir,
         FileDirOpStra? fileDirOp,
@@ -495,6 +527,14 @@ public static class DirExtension
         }
     }
 
+    /// <summary>
+    /// clone一个新的对象
+    /// </summary>
+    /// <param name="thisDir"></param>
+    /// <param name="optype">重设的操作类型</param>
+    /// <param name="IsResetNextOpType">是否重设操作类型</param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public static Dir Clone(
         this Dir thisDir,
         NextOpType? optype = null,
@@ -536,6 +576,13 @@ public static class DirExtension
         return ndir;
     }
 
+    /// <summary>
+    /// 改变根路径位置
+    /// </summary>
+    /// <param name="thisDir"></param>
+    /// <param name="oldPath"></param>
+    /// <param name="newPath"></param>
+    /// <returns></returns>
     public static Dir ResetRootPath(this Dir thisDir, string oldPath, string newPath)
     {
         thisDir.FormatedPath = thisDir.FormatedPath.Replace(oldPath, newPath);
@@ -553,6 +600,10 @@ public static class DirExtension
         return thisDir;
     }
 
+    /// <summary>
+    /// 文件操作权限检查（废弃）
+    /// </summary>
+    /// <param name="thisDir"></param>
     public static void AccessCheck(this Dir thisDir)
     {
         //不是核心关注点，下面实现有bug。不校验所有文件夹权限，创建时会抛出错误，此时手动处理吧。
@@ -639,247 +690,3 @@ public static class DirExtension
         //});
     }
 }
-
-/// <summary>
-/// 文件夹结构，它包含文件和文件夹
-/// </summary>
-/// <param name="path">绝对路径</param>
-/// <param name="children">子文件或文件夹</param>
-// public class Dirxx(string path, List<AFileOrDir>? children = null, NextOpType? nextOp = null)
-//     : AFileOrDir(path, DirOrFile.Dir, nextOp)
-// {
-// public List<AFileOrDir> Children { get; set; } = children ?? [];
-
-/* public override bool IsEqual(AFileOrDir other)
-{
-    if (other is not Dir otherDir)
-    {
-        return false;
-    }
-    else
-    {
-        if (this.FormatedPath != otherDir.FormatedPath || this.NextOp != otherDir.NextOp)
-        {
-            return false;
-        }
-        if (this.Children.Count != otherDir.Children.Count)
-        {
-            return false;
-        }
-        this.Children.Sort(AFileOrDir.Compare);
-        otherDir.Children.Sort(AFileOrDir.Compare);
-        for (int i = 0; i < this.Children.Count; i++)
-        {
-            if (!this.Children[i].IsEqual(otherDir.Children[i]))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-} */
-
-/// <summary>
-/// clone, 但是更改根目录
-/// </summary>
-/// <param name="optype">操作步骤</param>
-/// <param name="oldRootPath">旧根路径</param>
-/// <param name="newRootPath">新根路径</param>
-/// <param name="IsResetNextOpType">是否重置下步操作</param>
-/// <returns></returns>
-// public Dir Clone(
-//     NextOpType? optype,
-//     string oldRootPath,
-//     string newRootPath,
-//     bool IsResetNextOpType = false
-// )
-// {
-//     var ndir = this.Clone(optype, IsResetNextOpType);
-//     ndir.ResetRootPath(oldRootPath, newRootPath);
-//     return ndir;
-// }
-
-/// <summary>
-/// clone,不克隆文件
-/// </summary>
-/// <param name="optype"></param>
-/// <param name="IsResetNextOpType"></param>
-/// <returns></returns>
-/// <exception cref="Exception"></exception>
-// public Dir Clone(NextOpType? optype = null, bool IsResetNextOpType = false) { }
-
-/// <summary>
-/// 重设置根目录
-/// </summary>
-/// <param name="oldPath"></param>
-/// <param name="newPath"></param>
-// public void ResetRootPath(string oldPath, string newPath)
-// {
-//     this.FormatedPath = this.FormatedPath.Replace(oldPath, newPath);
-//     this.Children.ForEach(e =>
-//     {
-//         if (e is File file)
-//         {
-//             file.FormatedPath = file.FormatedPath.Replace(oldPath, newPath);
-//         }
-//         else if (e is Dir dir)
-//         {
-//             dir.ResetRootPath(oldPath, newPath);
-//         }
-//     });
-// }
-
-/// <summary>
-/// 文件夹合并
-/// </summary>
-/// <param name="fileDirOp">具体操作步骤</param>
-/// <param name="diffdir">将要更新的内容</param>
-/// <param name="IsUpdateObject"> 是否更新Object对象</param>
-/// <param name="IsUpdateDirFile">是否更新文件目录树</param>
-/// <returns></returns>
-//     public void Combine(
-//         FileDirOpStra? fileDirOp,
-//         Dir diffdir,
-//         bool IsUpdateObject = true,
-//         bool IsUpdateDirFile = false
-//     ) { }
-
-//     /// <summary>
-//     /// 合并两个文件夹,other不会发生改变，this将合并一个副本，这不会改变文件结构
-//     /// </summary>
-//     /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
-//     /// <returns></returns>
-//     public void CombineJustObject(Dir other)
-//     {
-//         Combine(null, other, true, false);
-//     }
-
-//     /// <summary>
-//     /// 合并两个文件夹,other不会发生改变，this将不会改变，而文件结构会改变
-//     /// </summary>
-//     /// <param name="other">它的一个clone将被合并的dir,它的NextOp 不应该是空，否则什么都不会发生</param>
-//     /// <returns></returns>
-//     public void CombineJustDirFile(FileDirOpStra fileDirOp, Dir diffDir)
-//     {
-//         Combine(fileDirOp, diffDir, false, true);
-//     }
-
-//     /// <summary>
-//     /// 添加子节点,根目录相同,才会被添加进去
-//     /// </summary>
-//     /// <param name="child"></param>
-//     /// <returns></returns>/
-//     protected void AddChild(AFileOrDir child) { }
-
-//     /// <summary>
-//     /// 从文件夹中提取信息
-//     /// </summary>
-//     /// <param name="cherryPicks">绝对路径,只包含的文件或者目录</param>
-//     /// <param name="exculdes">绝对路径，排除的文件或目录</param>
-//     /// <exception cref="NotSupportedException"></exception>
-
-
-//     /// <summary>
-//     ///  写入目录文件树，首先必须定义写入文件的策略，此目录结构不包含文件内容,但有一个
-//     ///  文件的修改时间，是否修改文件的修改时间，需要定义文件的写入策略 WriteFileStrageFunc
-//     /// </summary>
-//     /// <returns></returns>
-
-
-//     /// <summary>
-//     /// 校验文件夹和文件权限
-//     /// </summary>
-//     // private void AccessCheck()j
-//     // {
-//     //不是核心关注点，下面实现有bug。不校验所有文件夹权限，创建时会抛出错误，此时手动处理吧。
-//     // return;
-//     //this.Children.ForEach(e =>
-//     //{
-//     //    if (e is File file)
-//     //    {
-//     //        if (file.NextOp == null) { }
-//     //        else if (file.NextOp == NextOpType.Add)
-//     //        {
-//     //            if (
-//     //                !AccessWrapper.CheckDirAccess(
-//     //                    Path.GetDirectoryName(file.FormatedPath)
-//     //                        ?? throw new DirectoryNotFoundException(
-//     //                            $"{file.FormatedPath} 此父路径不存在"
-//     //                        ),
-//     //                    [DirAcess.CreateFiles]
-//     //                )
-//     //            )
-//     //            {
-//     //                throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限创建文件");
-//     //            }
-//     //        }
-//     //        else if (file.NextOp == NextOpType.Modify)
-//     //        {
-//     //            if (
-//     //                !(
-//     //                    AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete])
-//     //                    && AccessWrapper.CheckDirAccess(
-//     //                        Path.GetDirectoryName(file.FormatedPath)
-//     //                            ?? throw new DirectoryNotFoundException(
-//     //                                $"{file.FormatedPath} 此父路径不存在"
-//     //                            ),
-//     //                        [DirAcess.CreateFiles]
-//     //                    )
-//     //                )
-//     //            )
-//     //            {
-//     //                throw new UnauthorizedAccessException(
-//     //                    $"{file.FormatedPath} 无权限删除源文件或者创建新文件"
-//     //                );
-//     //            }
-//     //        }
-//     //        else if (file.NextOp == NextOpType.Del)
-//     //        {
-//     //            if (!AccessWrapper.CheckFileAccess(file.FormatedPath, [FileAccess.Delete]))
-//     //            {
-//     //                throw new UnauthorizedAccessException($"{file.FormatedPath} 无权限删除源文件");
-//     //            }
-//     //        }
-//     //    }
-//     //    else if (e is Dir dir)
-//     //    {
-//     //        if (dir.NextOp == null) { }
-//     //        else if (dir.NextOp == NextOpType.Add)
-//     //        {
-//     //            if (
-//     //                !AccessWrapper.CheckDirAccess(
-//     //                    Path.GetDirectoryName(dir.FormatedPath)
-//     //                        ?? throw new DirectoryNotFoundException(
-//     //                            $"{dir.FormatedPath} 此父路径不存在"
-//     //                        ),
-//     //                    [DirAcess.CreateDirectories, DirAcess.CreateFiles]
-//     //                )
-//     //            )
-//     //            {
-//     //                throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限创建文件夹或者文件");
-//     //            }
-//     //        }
-//     //        else if (dir.NextOp == NextOpType.Del)
-//     //        {
-//     //            if (!AccessWrapper.CheckDirAccess(dir.FormatedPath, [DirAcess.Delete]))
-//     //            {
-//     //                throw new UnauthorizedAccessException($"{dir.FormatedPath} 无权限删除文件夹");
-//     //            }
-//     //            else
-//     //            {
-//     //                //校验是否拥有子文件或者文件夹的删除权限，
-//     //                dir.AccessCheck();
-//     //            }
-//     //        }
-//     //    }
-//     //});
-//     // }
-
-//     /// <summary>
-//     /// 比较两个目录文件树是否相同,不相同返回差异部分,左侧是右侧的下一个版本,任何一个节点的nextop != null，即所有
-//     /// 节点都会打上标记
-//     /// 文件夹的 NextOp 只有新增和删除
-//     /// </summary>
-//     /// <param name="otherRootDir"></param>
-//     /// <returns></returns>
-// }

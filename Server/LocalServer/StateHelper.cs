@@ -2,18 +2,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Common;
 
 namespace LocalServer;
-
-// enum StateWhenMsg
-// {
-//     Authority = 0,
-//     ConfigInfo = 1,
-//     LocalPackAndUpload = 2,
-//     RemoteUnPackAndRelease = 3,
-// }
 
 public abstract class StateHelpBase(
     LocalSyncServer context,
@@ -147,18 +138,11 @@ public class DeployHelper(LocalSyncServer context)
             h.DiffProcess();
         }
         else
-        {
+        { // msbuild 只在windows 才有
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 //构建
 
-                //var OutputPath = LocalSyncServer.GetProjectOutPath(
-                //    Context.NotNullSyncConfig.LocalProjectAbsolutePath
-                //);
-                //var AbOutPath = Path.Combine(
-                //    Context.NotNullSyncConfig.LocalProjectAbsolutePath,
-                //    OutputPath
-                //);
                 ProcessStartInfo startbuildInfo =
                     new()
                     {
@@ -334,59 +318,52 @@ public class DeployMSSqlHelper(LocalSyncServer context)
         }
         else
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            var arguments =
+                $" /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac"
+                // 不要log file 了
+                //+ $" /DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log"
+                + $" /p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
+                + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
+                + $" /SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate}"
+                + $" /p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True";
+            if (Context.NotNullSyncConfig.SrcDb.SyncTablesData != null)
             {
-                var arguments =
-                    $" /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac"
-                    // 不要log file 了
-                    //+ $" /DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log"
-                    + $" /p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
-                    + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
-                    + $" /SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate}"
-                    + $" /p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True";
-                if (Context.NotNullSyncConfig.SrcDb.SyncTablesData != null)
+                foreach (var t in Context.NotNullSyncConfig.SrcDb.SyncTablesData)
                 {
-                    foreach (var t in Context.NotNullSyncConfig.SrcDb.SyncTablesData)
-                    {
-                        arguments += $" /p:TableData={t}";
-                    }
+                    arguments += $" /p:TableData={t}";
                 }
+            }
 
-                ProcessStartInfo startInfo =
-                    new()
-                    {
-                        FileName = LocalSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
-                        Arguments = arguments,
-                        StandardOutputEncoding = System.Text.Encoding.UTF8,
-                        // The arguments to pass to the command (e.g., list directory contents)
-                        RedirectStandardOutput = true, // Redirect the standard output to a string
-                        UseShellExecute = false, // Do not use the shell to execute the command
-                        CreateNoWindow = true // Do not create a new window for the command
-                    };
-                using Process process = new() { StartInfo = startInfo };
-                // Start the process
-                process.Start();
-
-                // Read the output from the process
-                string output = process.StandardOutput.ReadToEnd();
-
-                // Wait for the process to exit
-                process.WaitForExit();
-
-                if (process.ExitCode == 0)
+            ProcessStartInfo startInfo =
+                new()
                 {
-                    Context.LocalPipe.SendMsg(CreateMsg("数据库打包成功！")).Wait();
-                    PackAndSwitchNext();
-                }
-                else
-                {
-                    Context.LocalPipe.SendMsg(CreateErrMsg(output)).Wait();
-                    throw new Exception("执行发布错误，错误信息参考上一条消息！");
-                }
+                    FileName = LocalSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
+                    Arguments = arguments,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    // The arguments to pass to the command (e.g., list directory contents)
+                    RedirectStandardOutput = true, // Redirect the standard output to a string
+                    UseShellExecute = false, // Do not use the shell to execute the command
+                    CreateNoWindow = true // Do not create a new window for the command
+                };
+            using Process process = new() { StartInfo = startInfo };
+            // Start the process
+            process.Start();
+
+            // Read the output from the process
+            string output = process.StandardOutput.ReadToEnd();
+
+            // Wait for the process to exit
+            process.WaitForExit();
+
+            if (process.ExitCode == 0)
+            {
+                Context.LocalPipe.SendMsg(CreateMsg("数据库打包成功！")).Wait();
+                PackAndSwitchNext();
             }
             else
             {
-                throw new NotSupportedException("只支持windows!");
+                Context.LocalPipe.SendMsg(CreateErrMsg(output)).Wait();
+                throw new Exception("执行发布错误，错误信息参考上一条消息！");
             }
         }
     }
@@ -410,6 +387,7 @@ public class UploadPackedHelper(LocalSyncServer context)
                 $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}.zip",
                 (double current) =>
                 {
+                    //这里可能需要降低获取上传进度的频率
                     Context
                         .LocalPipe.SendMsg(CreateMsg(current.ToString(), SyncMsgType.Process))
                         .Wait();
@@ -450,222 +428,3 @@ public class FinallyPublishHelper(LocalSyncServer context)
         Context.LocalPipe.SendMsg(msg).Wait();
     }
 }
-// /// <summary>
-// /// 0. 发布源验证密码
-// /// </summary>
-// /// <param name="context"></param>
-// public class LocalAuthorityState(LocalSyncServer context) : StateHelpBase(context)
-// {
-//     public override void HandleRemoteMsg(SyncMsg? msg)
-//     {
-//         throw new NotImplementedException("error usage!");
-//     }
-
-//     public override void HandleLocalMsg(SyncMsg? msg)
-//     {
-//         if (msg == null)
-//         {
-//             return;
-//         }
-//         else
-//         {
-//             string Pwd = msg.Body;
-//             if (Pwd == "Xfs1%$@_fdYU.>>")
-//             {
-//                 Context.LocalSocketSendMsg(new SyncMsg(SyncMsgType.Success, "源服务密码校验成功！"));
-//                 Context.StateHelper = new WaitingConfigInfoState(Context);
-//             }
-//             else
-//             {
-//                 throw new UnauthorizedAccessException("pwd error!");
-//             }
-//         }
-//     }
-// }
-
-// /// <summary>
-// /// 1. 获取配置信息，它包含目标的服务器的配置信息
-// /// </summary>
-// /// <param name="context"></param>
-// public class WaitingConfigInfoState(LocalSyncServer context) : StateHelpBase(context)
-// {
-//     public override void HandleRemoteMsg(SyncMsg? msg) { }
-
-//     public override void HandleLocalMsg(SyncMsg? msg)
-//     {
-//         if (msg == null)
-//         {
-//             return;
-//         }
-//         else
-//         {
-//             string ConfigInfo = msg.Body;
-//             Context.SyncConfig =
-//                 JsonSerializer.Deserialize<Config>(ConfigInfo)
-//                 ?? throw new NullReferenceException("ConfigInfo is null");
-//             var task = Context.RemoteSocket.ConnectAsync(
-//                 new Uri(Context.SyncConfig.RemoteUrl),
-//                 CancellationToken.None
-//             );
-//             if (task.Wait(10000))
-//             {
-//                 if (Context.RemoteSocket.State == WebSocketState.Open)
-//                 {
-//                     var state = new RemoteAuthorityState(Context);
-//                     state.SendPwdToRemoteServer();
-//                     Context.StateHelper = state;
-//                 }
-//                 else
-//                 {
-//                     throw new Exception("connect remote server failed!");
-//                 }
-//             }
-//             else
-//             {
-//                 throw new TimeoutException("connect remote server timeout");
-//             }
-//         }
-//     }
-// }
-
-// /// <summary>
-// /// 2. 目标服务器权限校验
-// /// </summary>
-// /// <param name="context"></param>
-// public class RemoteAuthorityState(LocalSyncServer context) : StateHelpBase(context)
-// {
-//     public override void HandleRemoteMsg(SyncMsg? msg)
-//     {
-//         if (msg == null)
-//         {
-//             return;
-//         }
-//         else
-//         {
-//             if (msg.Type == SyncMsgType.Success)
-//             {
-//                 Context.LocalSocketSendMsg(new SyncMsg(SyncMsgType.Success, "远程服务器校验成功！"));
-//                 var diffState = new DirFilesDiffState(Context);
-//                 diffState.SendSyncConfigToRemote();
-//                 Context.StateHelper = diffState;
-//             }
-//             else
-//             {
-//                 throw new Exception("远程服务器权限校验失败，请检查Local Server 的Mac地址是否在 Remote Server 的允许列表内！");
-//             }
-//         }
-//     }
-
-//     public override void HandleLocalMsg(SyncMsg? msg) { }
-
-//     public void SendPwdToRemoteServer()
-//     {
-//         var authorityInfo = new
-//         {
-//             Pwd = "xfs@#123hd??1>>|12#4",
-//             MacAdr = new LocalServer.Controllers.LocalServerController(
-//                 Context.Factory
-//             ).GetMacAddress()
-//         };
-//         Context.RemoteSocketSendMsg(authorityInfo);
-//     }
-// }
-
-// /// <summary>
-// /// 3. 文件比较
-// /// </summary>
-// /// <param name="context"></param>
-// public class DirFilesDiffState(LocalSyncServer context) : StateHelpBase(context)
-// {
-//     public override void HandleRemoteMsg(SyncMsg? msg)
-//     {
-//         if (msg == null)
-//         {
-//             return;
-//         }
-//         else
-//         {
-//             if (msg.IsSuccess)
-//             {
-//                 var state = new LocalPackAndUploadState(Context);
-//                 state.PackDiffDir(msg);
-//                 Context.StateHelper = state;
-//             }
-//             else
-//             {
-//                 throw new Exception(msg.Body);
-//             }
-//         }
-//     }
-
-//     public override void HandleLocalMsg(SyncMsg? msg) { }
-
-//     public void SendSyncConfigToRemote()
-//     {
-//         Context.RemoteSocketSendMsg(
-//             Context.SyncConfig
-//                 ?? throw new NullReferenceException("SyncConfig should't be null here!")
-//         );
-//     }
-// }
-
-// /// <summary>
-// /// 4. 本地打包并上传
-// /// </summary>
-// /// <param name="context"></param>
-// public class LocalPackAndUploadState(LocalSyncServer context) : StateHelpBase(context)
-// {
-//     public override void HandleRemoteMsg(SyncMsg? msg)
-//     {
-//         if (msg == null)
-//         {
-//             return;
-//         }
-//         else { }
-//     }
-
-//     public override void HandleLocalMsg(SyncMsg? msg) { }
-
-//     /// <summary>
-//     /// 打包文件
-//     /// </summary>
-//     /// <param name="msg"></param>
-//     /// <exception cref="Exception"></exception>
-//     public void PackDiffDir(SyncMsg msg)
-//     {
-//         if (msg.IsSuccess)
-//         {
-//             var diff = JsonSerializer.Deserialize<Dir>(msg.Body);
-
-//             Context.LocalSocketSendMsg(new SyncMsg(SyncMsgType.Success, "文件打包完成！"));
-//             Context.LocalSocketSendMsg(new SyncMsg(SyncMsgType.Success, "文件上传完成！"));
-//         }
-//         else
-//         {
-//             throw new Exception(msg.Body);
-//         }
-//     }
-
-//     private void UploadPackedFiles(string absolutePath)
-//     {
-//         //TODO 传递上传进度到前端。
-//     }
-// }
-
-// /// <summary>
-// /// 5. 目标服务器解包并发布
-// /// </summary>
-// /// <param name="context"></param>
-// public class RemoteUnPackAndReleaseState(LocalSyncServer context) : StateHelpBase(context)
-// {
-//     public override void HandleRemoteMsg(SyncMsg? msg)
-//     {
-//         if (msg == null)
-//         {
-//             return;
-//         }
-//         else { }
-//     }
-
-//     public override void HandleLocalMsg(SyncMsg? msg) { }
-// }

@@ -39,10 +39,10 @@ public class AFileOrDir
         set { Path = value; }
     }
 
-    public bool IsEqual(AFileOrDir other)
-    {
-        return false;
-    }
+    // public bool IsEqual(AFileOrDir other)
+    // {
+    //     return false;
+    // }
 
     public static int Compare(AFileOrDir l, AFileOrDir r)
     {
@@ -69,7 +69,7 @@ public class File : AFileOrDir
 
     public required DateTime MTime { get; set; }
 
-    public new bool IsEqual(AFileOrDir other)
+    public  bool IsEqual(AFileOrDir other)
     {
         if (other is not File otherFile)
         {
@@ -96,7 +96,7 @@ public class Dir : AFileOrDir
 
     public required List<AFileOrDir> Children { get; set; }
 
-    public new bool IsEqual(AFileOrDir other)
+    public bool IsEqual(AFileOrDir other)
     {
         if (other is not Dir otherDir)
         {
@@ -116,7 +116,23 @@ public class Dir : AFileOrDir
             otherDir.Children.Sort(AFileOrDir.Compare);
             for (int i = 0; i < this.Children.Count; i++)
             {
-                if (!this.Children[i].IsEqual(otherDir.Children[i]))
+                var l = this.Children[i];
+                var r = otherDir.Children[i];
+                if (l is Dir ld && r is Dir rd)
+                {
+                    if (!ld.IsEqual(rd))
+                    {
+                        return false;
+                    }
+                }
+                else if (l is File lf && r is File rf)
+                {
+                    if (!lf.IsEqual(rf))
+                    {
+                        return false;
+                    }
+                }
+                else
                 {
                     return false;
                 }

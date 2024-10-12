@@ -6,13 +6,6 @@ using Common;
 
 namespace RemoteServer;
 
-// enum StateWhenMsg
-// {
-//     Authority = 0,
-//     ConfigInfo = 1,
-//     LocalPackAndUpload = 2,
-//     RemoteUnPackAndRelease = 3,
-// }
 
 public abstract class StateHelpBase(
     RemoteSyncServer context,
@@ -151,8 +144,6 @@ public class FinallyPublishHelper(RemoteSyncServer context)
     public void FinallyPublish()
     {
         // 发布数据库
-        if (Context.NotNullSyncConfig.IsDeployDb)
-        {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var arguments =
@@ -189,11 +180,6 @@ public class FinallyPublishHelper(RemoteSyncServer context)
                     Context.Pipe.SendMsg(CreateErrMsg(output)).Wait();
                     throw new Exception("执行发布错误，错误信息参考上一条消息！");
                 }
-            }
-            else
-            {
-                throw new NotSupportedException("只支持windows!");
-            }
         }
         else
         {
