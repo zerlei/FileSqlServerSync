@@ -1,0 +1,54 @@
+name: buildProject
+on:
+  push:
+    branches: 
+      - "main"
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use NodeJs
+      uses: actions/setup-node@v4
+      with: 
+        node-version: 22.x
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: build
+      run: |
+        cd Tool/webtool
+        npm install
+        npm run build
+        cd ../../Server
+        dotnet restore
+        cd LocalServer
+        dotnet publish --no-restore
+        cd ../RemoteServer
+        dotnet publish --no-restore
+        cd ../../
+    - name: Package
+      run: |
+        mkdir release
+        mv -Path "Server/LocalServer/bin/Release/net8.0/publish/*" -Destination "release/LocalServer"
+        mv -Path "Server/RemoteServer/bin/Release/net8.0/publish/*" -Destination "release/RemoteServer"
+        cp Tool/JsScript/* release/JsScript
+        Compress-Archive -Path "release/*" -DestinationPath "FS_win_dotnet8.zip" -Force
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          FS_win_dotnet8.zip
+          LICENSE
+        name: Release ${{ github.ref }}
+        draft: true
+        prerelease: true
