@@ -211,7 +211,7 @@ public class FileDirOpForUnpack(string srcRootPath, string dstRootPath) : FileDi
             ZipEntry theEntry;
             while ((theEntry = s.GetNextEntry()) != null)
             {
-                Console.WriteLine(theEntry.Name);
+                //Console.WriteLine(theEntry.Name);
 
                 string directoryName =
                     dstPath + $"/{Id}/" + Path.GetDirectoryName(theEntry.Name)

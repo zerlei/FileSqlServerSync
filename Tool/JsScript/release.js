@@ -1,44 +1,123 @@
 import chalk from "chalk";
 import WebSocket from "ws";
 
-
 //#region  ############################## 配置文件 ###################################
 
+const LocalHost = "127.0.0.1";
 //这是个例子，请在`config`中写你的配置
 const example_config = {
-  //发布的项目名称，它的目的是为了防止有两个人同时发布一个项目，和便于排查发布历史记录
-  Name: "",
-  //发布服务器的地址
-  RemoteUrl: "http://192.168.1.100:8067",
-    //源SqlServer数据库的链接字符串，一般是开发或者测试数据库，**此数据库的ip是相对于运行此脚本的机器**
-  SrcDbConnection: "",
-    //目的SqlServer数据库的链接字符串，一般是正式环境数据库，**此数据库的ip是相对于运行RemoteServer的机器**
-  DstDbConnection: "",
-
-  //发布数据库时，只同步结构。此数组中的表，将会连数据也一起同步
-  SyncDataTables:[],
+  //发布的名称，每个项目具有唯一的一个名称
+  Name: "Test",
+  RemotePwd: "t123",
+  //远程服务器地址，也就是发布的目的地，它是正式环境
+  RemoteUrl: "127.0.0.1:6819",
+  //是否发布数据库 sqlserver
+  IsDeployDb: false,
+  //是否发布前重新构建项目
+  IsDeployProject: false,
+  //项目地址
+  LocalProjectAbsolutePath:
+    "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
   //源文件目录地址，是要发布的文件根目录，它是绝对路径，!执行发布时将发布到这个目录!
-  LocalRootPath: "",
+  LocalRootPath: "D:/FileSyncTest/src",
   //目标文件目录地址，也就是部署服务的机器上的项目文件根目录，它是绝对路径
-  RemoteRootPath: "",
-
- //根目录下的子目录，分子目录是为了针对不同的目录有不同的发布策略，它是相对路径，即相对于LocalRootPath和RemoteRootPath，文件数据依此进行
+  RemoteRootPath: "D:/FileSyncTest/dst",
+  //源数据库配置 SqlServer,将会同步数据库的结构
+  SrcDb: {
+    //Host
+    ServerName: "172.16.12.2",
+    //数据库名
+    DatebaseName: "HMES_H7_HNFYMF",
+    User: "hmes-h7",
+    Password: "Hmes-h7666",
+    //是否信任服务器证书
+    TrustServerCertificate: "True",
+    //同步的数据，这些数据将会同步
+    SyncTablesData: [
+      "dbo.sys_Button",
+      "dbo.sys_Menu",
+      "dbo.sys_Module",
+      "dbo.sys_Page",
+    ],
+  },
+  //目标数据库配置 sqlserver
+  DstDb: {
+    ServerName: "127.0.0.1",
+    DatebaseName: "HMES_H7_HNFYMF",
+    User: "sa",
+    Password: "0",
+    TrustServerCertificate: "True",
+  },
+  //子目录配置，每个子目录都有自己不同的发布策略，它是相对路径，即相对于LocalRootPath和RemoteRootPath(注意 '/'，这将拼成一个完整的路径)，文件数据依此进行,
   DirFileConfigs: [
     {
-    //子目录的相对路径
-      DirPath: "",
+      DirPath: "/bin",
       //排除的文件或目录，它是相对路径，相对于！！！LocalRootPath和RemoteRootPath！！！
-      Excludes: [],
+      Excludes: ["/roslyn", "/Views"],
       //只追踪文件或目录，它是相对路径，相对于！！！LocalRootPath和RemoteRootPath！！！，它的优先级最高，如果你指定了它的值，Excludes将会失效
-      CherryPicks: [],
+      // CherryPicks:[]
     },
   ],
 };
-const config = {};
+const config = {
+  //发布的名称，每个项目具有唯一的一个名称
+  Name: "Test",
+  RemotePwd: "t123",
+  //远程服务器地址，也就是发布的目的地，它是正式环境
+  RemoteUrl: "127.0.0.1:6819",
+  //是否发布数据库 sqlserver
+  IsDeployDb: true,
+  //是否发布前重新构建项目
+  IsDeployProject: true,
+  //项目地址
+  LocalProjectAbsolutePath:
+    "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
+  //源文件目录地址，是要发布的文件根目录，它是绝对路径，!执行发布时将发布到这个目录!
+  LocalRootPath: "D:/FileSyncTest/src",
+  //目标文件目录地址，也就是部署服务的机器上的项目文件根目录，它是绝对路径
+  RemoteRootPath: "D:/FileSyncTest/dst",
+  //源数据库配置 SqlServer,将会同步数据库的结构
+  SrcDb: {
+    //Host
+    ServerName: "172.16.12.2",
+    //数据库名
+    DatebaseName: "HMES_H7_HNFYMF",
+    User: "hmes-h7",
+    Password: "Hmes-h7666",
+    //是否信任服务器证书
+    TrustServerCertificate: "True",
+    //同步的数据，这些数据将会同步
+    SyncTablesData: [
+      "dbo.sys_Button",
+      "dbo.sys_Menu",
+      "dbo.sys_Module",
+      "dbo.sys_Page",
+    ],
+  },
+  //目标数据库配置 sqlserver
+  DstDb: {
+    ServerName: "127.0.0.1",
+    DatebaseName: "HMES_H7_HNFYMF",
+    User: "sa",
+    Password: "0",
+    TrustServerCertificate: "True",
+  },
+  //子目录配置，每个子目录都有自己不同的发布策略，它是相对路径，即相对于LocalRootPath和RemoteRootPath(注意 '/'，这将拼成一个完整的路径)，文件数据依此进行,
+  DirFileConfigs: [
+    {
+      DirPath: "/bin",
+      //排除的文件或目录，它是相对路径，相对于！！！LocalRootPath和RemoteRootPath！！！
+      Excludes: ["/roslyn", "/Views"],
+      //只追踪文件或目录，它是相对路径，相对于！！！LocalRootPath和RemoteRootPath！！！，它的优先级最高，如果你指定了它的值，Excludes将会失效
+      // CherryPicks:[]
+    },
+  ],
+};
 //#endregion
 
 //#region  ############################## 打印函数 ###################################
 
+let IsSuccess = false;
 /**
  * 在新行打印错误信息
  */
@@ -62,9 +141,12 @@ function PrintSuccessInNewLine(str) {
 /**
  * 在新行打印一般信息
  */
-function PrintGeneralInNewLine(str) {
-  process.stdout.write("\n");
-  process.stdout.write(str);
+function PrintCloseNewLine(str) {
+  if(IsSuccess) {
+    PrintSuccessInNewLine(str)
+  } else {
+    PrintErrInNewLine(str)
+  }
 }
 /**
  * 在当前行打印一般信息，打印此行信息之前会清除当前行
@@ -80,36 +162,71 @@ function PrintGeneralInCurrentLine(str) {
 /**
  * 1-n. localServer 工作，此处只展示信息
  */
-
-//这个是固定死的
-const wsUrl = `ws://127.0.0.1:4538/websoc?Name=${config.Name}`;
-const ws = new WebSocket(wsUrl);
-
-ws.on('open', () => {
-    //上传配置
-    ws.send(JSON.stringify(config),(err)=>{
-        console.log(err)
-        ws.close()
-    })
-
-});
-
-ws.on('message', (message) => {
-    var msg = message.toString('utf8')
-    DealMsg(msg)
-});
-
-ws.on('close', () => {
-});
-
-function DealMsg(str) {
-    var msg = JSON.parse(str)
-    if(msg.IsSuccess) {
-
+let ws = null;
+function MsgCb(MsgIt) {
+  if (MsgIt.Type == 2) {
+    PrintGeneralInCurrentLine(MsgIt.Body);
+  } else {
+    if (MsgIt.Step <= 6) {
+      PrintSuccessInNewLine(`(${MsgIt.Step}/6) ${MsgIt.Body}`);
+      if (MsgIt.Step == 6) {
+        if (MsgIt.Body == "发布完成！") {
+          IsSuccess = true
+          ws.close();
+        }
+      }
+    } else if(MsgIt == 7) {
+      PrintErrInNewLine(MsgIt.Body);
     } else {
-        PrintErrInNewLine(msg.Body)
-        ws.close()
+      PrintCloseNewLine("(关闭)"+ MsgIt.Body);
     }
-
+  }
 }
 //#endregion
+async function connectWebSocket() {
+  return new Promise((resolve, reject) => {
+    const wsUrl = `ws://${LocalHost}:6818/websoc?Name=${config.Name}`;
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = (event) => {
+      var starter = {
+        Body: JSON.stringify(config),
+        Type: 1,
+        Step: 1,
+      };
+      //   console.warn("websocket connected!");
+      ws.send(JSON.stringify(starter));
+    };
+    ws.onmessage = (event) => {
+      // console.log(event.data);
+      MsgCb(JSON.parse(event.data));
+    };
+    ws.onclose = (event) => {
+      // console.warn(event)
+      MsgCb({
+        Type: 0,
+        Step: 8,
+        Body: event.reason,
+      });
+      // resolve()
+    };
+    ws.onerror = (e) => {
+      // console.error(e);
+      MsgCb({
+        Type: 0,
+        Body: "异常错误，查看 Console",
+        Step: 7,
+      });
+      reject(err);
+    };
+  });
+}
+(async function main() {
+  try {
+    await connectWebSocket();
+    // console.log('WebSocket has closed');
+    // The script will wait here until the WebSocket connection is closed
+  } catch (err) {
+    console.error("Failed to connect or an error occurred:", err);
+  }
+})();
