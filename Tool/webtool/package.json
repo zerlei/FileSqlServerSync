@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --outDir ../../Server/LocalServer/wwwroot/",
+    "build": "vite build --outDir ../../release/LocalServer/wwwroot/",
     "preview": "vite preview"
   },
   "dependencies": {
