@@ -37,14 +37,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 DefaultFilesOptions defops = new DefaultFilesOptions();
-defops.DefaultFileNames.Clear();
+
+//defops.DefaultFileNames.Clear();
 defops.DefaultFileNames.Add("index.html");
 app.UseDefaultFiles(defops);
 app.UseStaticFiles();
 app.UseWebSockets();
 app.UseAuthorization();
-app.Urls.Clear();
-app.Urls.Add("http://0.0.0.0:6818");
+
+//app.Urls.Clear();
+//app.Urls.Add("http://0.0.0.0:6818");
 app.MapControllers();
 
 app.Run();
