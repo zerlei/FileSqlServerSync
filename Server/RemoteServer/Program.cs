@@ -40,7 +40,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseWebSockets();
-app.Urls.Clear();
-app.Urls.Add("http://0.0.0.0:6819");
+
+//app.Urls.Clear();
+//app.Urls.Add("http://0.0.0.0:6819");
 app.MapControllers();
 app.Run();
