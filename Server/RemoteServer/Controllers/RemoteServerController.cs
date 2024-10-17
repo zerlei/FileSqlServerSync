@@ -12,6 +12,12 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
     private readonly SqliteDbContext _db = db;
     private readonly RemoteSyncServerFactory Factory = factory;
 
+    [HttpGet("/t")]
+    public IActionResult ConnnectTest()
+    {
+        return Ok("网络连接正常！");
+    }
+
     [Route("/websoc")]
     public async Task WebsocketConnection(string Name)
     {
@@ -41,6 +47,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
             HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
         }
     }
+
     /// <summary>
     /// 上传文件
     /// </summary>
