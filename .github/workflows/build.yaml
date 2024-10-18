@@ -48,6 +48,6 @@ jobs:
         files: |
           FS_win_dotnet8.zip
           LICENSE
-        name: ${{ github.ref | replace('refs/tags/', '') }}
+        name: ${{ github.ref -replace 'refs/tags/', '' }}
         draft: false
         prerelease: true
