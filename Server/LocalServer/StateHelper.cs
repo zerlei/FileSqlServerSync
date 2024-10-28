@@ -323,7 +323,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
                 // 不要log file 了
                 //+ $" /DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log"
                 + $" /p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
-                + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
+                + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatabaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
                 + $" /SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate}"
                 + $" /p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True";
             if (Context.NotNullSyncConfig.SrcDb.SyncTablesData != null)

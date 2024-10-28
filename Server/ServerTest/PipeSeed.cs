@@ -22,7 +22,7 @@ public class PipeSeed : IDisposable
             SrcDb = new MSSqlConfig
             {
                 ServerName = "172.16.12.2",
-                DatebaseName = "HMES_H7_HNFYMF",
+                DatabaseName = "HMES_H7_HNFYMF",
                 User = "hmes-h7",
                 Password = "Hmes-h7666",
                 TrustServerCertificate = "True",
@@ -37,7 +37,7 @@ public class PipeSeed : IDisposable
             DstDb = new MSSqlConfig
             {
                 ServerName = "127.0.0.1",
-                DatebaseName = "HMES_H7_HNFYMF",
+                DatabaseName = "HMES_H7_HNFYMF",
                 User = "sa",
                 Password = "0",
                 TrustServerCertificate = "True"

@@ -27,7 +27,7 @@ const example_config = {
     //Host
     ServerName: "172.16.12.2",
     //数据库名
-    DatebaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "HMES_H7_HNFYMF",
     User: "hmes-h7",
     Password: "Hmes-h7666",
     //是否信任服务器证书
@@ -43,7 +43,7 @@ const example_config = {
   //目标数据库配置 sqlserver
   DstDb: {
     ServerName: "127.0.0.1",
-    DatebaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "HMES_H7_HNFYMF",
     User: "sa",
     Password: "0",
     TrustServerCertificate: "True",
@@ -81,7 +81,7 @@ const config = {
     //Host
     ServerName: "172.16.12.2",
     //数据库名
-    DatebaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "HMES_H7_HNFYMF",
     User: "hmes-h7",
     Password: "Hmes-h7666",
     //是否信任服务器证书
@@ -97,7 +97,7 @@ const config = {
   //目标数据库配置 sqlserver
   DstDb: {
     ServerName: "127.0.0.1",
-    DatebaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "HMES_H7_HNFYMF",
     User: "sa",
     Password: "0",
     TrustServerCertificate: "True",

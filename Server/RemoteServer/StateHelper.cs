@@ -151,7 +151,7 @@ public class FinallyPublishHelper(RemoteSyncServer context)
         {
             var arguments =
                 $" /Action:Publish  /SourceFile:{RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id}.dacpac"
-                + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
+                + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatabaseName}"
                 + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True";
 
             ProcessStartInfo startInfo =

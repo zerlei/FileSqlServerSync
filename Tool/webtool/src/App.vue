@@ -28,7 +28,7 @@ config = {
   RemoteRootPath: "D:/FileSyncTest/dst",
   SrcDb: {
     ServerName: "172.16.12.2",
-    DatebaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "HMES_H7_HNFYMF",
     User: "hmes-h7",
     Password: "Hmes-h7666",
     TrustServerCertificate: "True",
@@ -41,7 +41,7 @@ config = {
   },
   DstDb: {
     ServerName: "127.0.0.1",
-    DatebaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "HMES_H7_HNFYMF",
     User: "sa",
     Password: "0",
     TrustServerCertificate: "True",

@@ -21,10 +21,12 @@ public class DirFileConfig
     /// 本地文件信息，也是即将发布的文件信息，通常是最新的版本
     /// </summary>
     public Dir? LocalDirInfo { get; set; }
+
     /// <summary>
     /// 差异文件信息
     /// </summary>
     public Dir? DiffDirInfo { get; set; }
+
     /// <summary>
     /// 远程文件信息，通常是较旧的版本
     /// </summary>
@@ -41,7 +43,7 @@ public class MSSqlConfig
     /// <summary>
     /// db名称
     /// </summary>
-    public required string DatebaseName { get; set; }
+    public required string DatabaseName { get; set; }
 
     /// <summary>
     /// 用户
