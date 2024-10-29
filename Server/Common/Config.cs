@@ -1,5 +1,33 @@
 namespace Common;
 
+public class ExecProcess
+{
+    /// <summary>
+    /// 步骤
+    /// </summary>
+    public SyncProcessStep Step { get; set; }
+
+    /// <summary>
+    /// A after B before
+    /// </summary>
+    public required string StepBeforeOrAfter { get; set; }
+
+    /// <summary>
+    /// L Local S Server
+    /// </summary>
+    public required string ExecInLocalOrServer { get; set; }
+
+    /// <summary>
+    /// 执行的应用程序名称
+    /// </summary>
+    public required string FileName { get; set; }
+
+    /// <summary>
+    /// 执行的应用程序参数
+    /// </summary>
+    public required string Argumnets { get; set; }
+}
+
 public class DirFileConfig
 {
     /// <summary>
@@ -127,4 +155,9 @@ public class Config
     /// 同步的文件夹配置
     /// </summary>
     public required List<DirFileConfig> DirFileConfigs { get; set; }
+
+    /// <summary>
+    /// 按照步骤执行应用程序扩展列表
+    /// </summary>
+    public required List<ExecProcess> ExecProcesses { get; set; }
 }

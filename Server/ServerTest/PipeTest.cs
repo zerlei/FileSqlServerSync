@@ -14,7 +14,12 @@ public class PipeTest
     [Fact]
     public async void TestCase()
     {
-        //msbuild 只能在windows上跑 
+        //if (System.IO.File.Exists("Pipe.txt"))
+        //{
+        //    System.IO.File.Delete("Pipe.txt");
+        //}
+        //System.IO.File.Create("Pipe.txt");
+        //msbuild 只能在windows上跑
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             var p1 = new TestPipe(false, "1");
@@ -27,9 +32,18 @@ public class PipeTest
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                         if (msg.Body == "发布完成！")
                         {
-                            _ = p1.Close("正常退出！");
+                            Task.Run(() =>
+                            {
+                                Task.Delay(1000).Wait();
+                                _ = p1.Close("正常退出！");
+                            });
                         }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
+                        System.IO.File.AppendAllText(
+                            "Pipe.txt",
+                            $"{msg.Step}-{msg.Type}:{msg.Body}\n"
+                        );
+
                         Console.WriteLine(b);
                         return true;
                     }

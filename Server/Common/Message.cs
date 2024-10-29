@@ -16,7 +16,7 @@ public enum SyncProcessStep
     PackSqlServer = 4,
     UploadAndUnpack = 5,
     Publish = 6,
-    CloseError = 7
+    Close = 7
 }
 
 public class SyncMsg
