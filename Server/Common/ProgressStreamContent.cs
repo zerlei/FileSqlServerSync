@@ -1,12 +1,17 @@
+using System;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading;
 
 namespace Common;
 
 public class ProgressStreamContent(Stream stream_, IProgress<double> progress)
-    : StreamContent(stream_, 4096)
+    : StreamContent(stream_, 1024 * 1024)
 {
     private readonly Stream FileStream = stream_;
-    private readonly int BufferSize = 4096;
+    private readonly int BufferSize = 1024 * 1024;
     private readonly IProgress<double> Progress = progress;
 
     protected override async Task SerializeToStreamAsync(

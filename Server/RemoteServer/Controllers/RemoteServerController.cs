@@ -53,6 +53,7 @@ public class SyncFilesController(RemoteSyncServerFactory factory, SqliteDbContex
     /// </summary>
     /// <param name="file"></param>
     /// <returns></returns>
+    [DisableRequestSizeLimit]
     [HttpPost("/UploadFile")]
     public async Task<IActionResult> UploadFile(IFormFile file)
     {

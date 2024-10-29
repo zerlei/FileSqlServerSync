@@ -69,14 +69,14 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
         using var content = new MultipartFormDataContent();
         using var fileStream = new FileStream(filePath, FileMode.Open);
         // TODO 上传进度回调
-        // var progress = new Progress<double>(
-        //     (current) =>
-        //     {
-        //         progressCb(current);
-        //     }
-        // );
-        //var fileContent = new ProgressStreamContent(fileStream, progress);
-        content.Add(new StreamContent(fileStream), "file", Path.GetFileName(filePath));
+        var progress = new Progress<double>(
+            (current) =>
+            {
+                progressCb(current);
+            }
+        );
+        var fileContent = new ProgressStreamContent(fileStream, progress);
+        content.Add(fileContent, "file", Path.GetFileName(filePath));
         var it = await client.PostAsync("http://" + url + "/UploadFile", content);
         if (it.StatusCode != System.Net.HttpStatusCode.OK)
         {
