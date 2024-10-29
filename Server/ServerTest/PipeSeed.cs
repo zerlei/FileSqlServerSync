@@ -22,7 +22,7 @@ public class PipeSeed : IDisposable
             SrcDb = new MSSqlConfig
             {
                 ServerName = "172.16.12.2",
-                DatebaseName = "HMES_H7_HNFYMF",
+                DatabaseName = "HMES_H7_HNFYMF",
                 User = "hmes-h7",
                 Password = "Hmes-h7666",
                 TrustServerCertificate = "True",
@@ -37,7 +37,7 @@ public class PipeSeed : IDisposable
             DstDb = new MSSqlConfig
             {
                 ServerName = "127.0.0.1",
-                DatebaseName = "HMES_H7_HNFYMF",
+                DatabaseName = "HMES_H7_HNFYMF",
                 User = "sa",
                 Password = "0",
                 TrustServerCertificate = "True"
@@ -45,6 +45,36 @@ public class PipeSeed : IDisposable
             DirFileConfigs = new List<DirFileConfig>
             {
                 new DirFileConfig { DirPath = "/bin", Excludes = ["/roslyn", "/Views"] }
+            },
+
+            // C:/Windows/System32/inetsrv/appcmd.exe stop sites "publicserver"
+            // C:/Windows/System32/inetsrv/appcmd.exe start sites "publicserver"
+            ExecProcesses = new List<ExecProcess>
+            {
+                new ExecProcess
+                {
+                    Argumnets = "ls",
+                    FileName = "powershell",
+                    StepBeforeOrAfter = "A",
+                    ExecInLocalOrServer = "L",
+                    Step = SyncProcessStep.DeployProject,
+                },
+                new ExecProcess
+                {
+                    Argumnets = "ls",
+                    FileName = "powershell",
+                    StepBeforeOrAfter = "B",
+                    ExecInLocalOrServer = "S",
+                    Step = SyncProcessStep.Publish,
+                },
+                new ExecProcess
+                {
+                    Argumnets = "ls",
+                    FileName = "powershell",
+                    StepBeforeOrAfter = "A",
+                    ExecInLocalOrServer = "S",
+                    Step = SyncProcessStep.Publish,
+                },
             }
         };
     }

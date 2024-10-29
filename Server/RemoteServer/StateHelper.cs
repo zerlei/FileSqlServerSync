@@ -13,7 +13,7 @@ public abstract class StateHelpBase(
 {
     protected readonly RemoteSyncServer Context = context;
 
-    protected readonly SyncProcessStep Step = step;
+    public readonly SyncProcessStep Step = step;
 
     public SyncMsg CreateErrMsg(string Body)
     {
@@ -42,7 +42,7 @@ public abstract class StateHelpBase(
         var syncMsg =
             JsonSerializer.Deserialize<SyncMsg>(msg)
             ?? throw new NullReferenceException("msg is null");
-        if (syncMsg.Step != Step)
+        if (syncMsg.Step != Step && syncMsg.Step != SyncProcessStep.Close)
         {
             throw new Exception("Sync step error!");
         }
@@ -134,7 +134,14 @@ public class UnPackAndReleaseHelper(RemoteSyncServer context)
         Context.Pipe.SendMsg(h.CreateMsg("将要发布数据库，可能时间会较长！")).Wait();
         Task.Run(() =>
         {
-            h.FinallyPublish();
+            try
+            {
+                h.FinallyPublish();
+            }
+            catch (Exception e)
+            {
+                Context.Close(e.Message);
+            }
         });
     }
 
@@ -151,9 +158,12 @@ public class FinallyPublishHelper(RemoteSyncServer context)
         {
             var arguments =
                 $" /Action:Publish  /SourceFile:{RemoteSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id}.dacpac"
-                + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatebaseName}"
+                + $" /TargetServerName:{Context.NotNullSyncConfig.DstDb.ServerName} /TargetDatabaseName:{Context.NotNullSyncConfig.DstDb.DatabaseName}"
                 + $" /TargetUser:{Context.NotNullSyncConfig.DstDb.User} /TargetPassword:{Context.NotNullSyncConfig.DstDb.Password} /TargetTrustServerCertificate:True";
 
+            //Context
+            //    .Pipe.SendMsg(CreateMsg($"发布脚本为: {RemoteSyncServer.SqlPackageAbPath} {arguments}"))
+            //    .Wait();
             ProcessStartInfo startInfo =
                 new()
                 {
@@ -201,8 +211,15 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             }
         });
 
+        Context.SetStateHelpBase(new NormalCloseHelper(Context));
         Context.Pipe.SendMsg(CreateMsg("发布完成！")).Wait();
     }
 
+    protected override void HandleMsg(SyncMsg msg) { }
+}
+
+public class NormalCloseHelper(RemoteSyncServer context)
+    : StateHelpBase(context, SyncProcessStep.Close)
+{
     protected override void HandleMsg(SyncMsg msg) { }
 }

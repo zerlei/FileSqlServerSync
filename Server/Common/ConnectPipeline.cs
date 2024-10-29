@@ -6,7 +6,6 @@ namespace Common;
 
 public abstract class AbsPipeLine(bool isAES)
 {
-
     /// <summary>
     /// pipeLine工作函数，生效期间永久阻塞
     /// </summary>
@@ -18,6 +17,7 @@ public abstract class AbsPipeLine(bool isAES)
     {
         return true;
     };
+
     /// <summary>
     /// 监听pipeline 消息，由Work 函数调用
     /// </summary>
@@ -47,7 +47,6 @@ public abstract class AbsPipeLine(bool isAES)
     /// <param name="progressCb">上传进度回调(现在没有回调)</param>
     /// <returns>上传完成时返回</returns>/
     public abstract Task UploadFile(string url, string filePath, Func<double, bool> progressCb);
-
 
     /// <summary>
     ///  管道消息是否使用AES加密
@@ -147,7 +146,7 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
                     new SyncMsg
                     {
                         Type = SyncMsgType.Error,
-                        Step = SyncProcessStep.CloseError,
+                        Step = SyncProcessStep.Close,
                         Body = CloseReason ?? ""
                     }
                 );

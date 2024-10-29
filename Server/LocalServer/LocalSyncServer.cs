@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Xml.Linq;
 using Common;
 
@@ -8,6 +10,7 @@ public class LocalSyncServer
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static string TempRootFile = "C:/TempPack";
     public static string SqlPackageAbPath = "sqlpackage";
+
     // 使用msdeploy 将会打包当前可运行的内容，它很有可能不包含最新的构建
     //public static string MsdeployAbPath = "msdeploy";
 
@@ -15,16 +18,88 @@ public class LocalSyncServer
     //使用msbuild 会缺少.net frame的运行环境 bin\roslyn 里面的内容，第一次需要人为复制一下，后面就就好了。
     public static string MSBuildAbPath = "MSBuild";
 #pragma warning restore CA2211 // Non-constant fields should not be visible
-    
+
     /// <summary>
     /// 连接状态，流程管理，LocalPipe 和 remotePipe 也在此处交换信息
     /// </summary>
     private StateHelpBase StateHelper;
 
-
     public void SetStateHelper(StateHelpBase helper)
     {
-        StateHelper = helper;
+        try
+        {
+            StateHelper = helper;
+            if (SyncConfig != null)
+            {
+                var LastExec = NotNullSyncConfig.ExecProcesses.Find(x =>
+                {
+                    return x.StepBeforeOrAfter == "A"
+                        && x.Step == (helper.Step - 1)
+                        && x.ExecInLocalOrServer == "L";
+                });
+                ExecProcess(LastExec);
+                var CurrentExec = NotNullSyncConfig.ExecProcesses.Find(x =>
+                {
+                    return x.StepBeforeOrAfter == "B"
+                        && x.Step == helper.Step
+                        && x.ExecInLocalOrServer == "L";
+                });
+                ExecProcess(CurrentExec);
+            }
+        }
+        catch (Exception ex)
+        {
+            Close(ex.Message);
+        }
+    }
+
+    public void ExecProcess(ExecProcess? ep)
+    {
+        if (ep != null)
+        {
+            ProcessStartInfo startInfo =
+                new()
+                {
+                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    Arguments = ep.Argumnets,
+                    FileName = ep.FileName, // The command to execute (can be any command line tool)
+                    // The arguments to pass to the command (e.g., list directory contents)
+                    RedirectStandardOutput = true, // Redirect the standard output to a string
+                    UseShellExecute = false, // Do not use the shell to execute the command
+                    CreateNoWindow = true // Do not create a new window for the command
+                };
+            using Process process = new() { StartInfo = startInfo };
+            // Start the process
+            process.Start();
+
+            // Read the output from the process
+            string output = process.StandardOutput.ReadToEnd();
+
+            // Wait for the process to exit
+            process.WaitForExit();
+
+            if (process.ExitCode == 0)
+            {
+                LocalPipe
+                    .SendMsg(
+                        StateHelper.CreateMsg(
+                            $"{ep.Step}-{ep.StepBeforeOrAfter}-{ep.ExecInLocalOrServer}-{ep.FileName} {ep.Argumnets} 执行成功！"
+                        )
+                    )
+                    .Wait();
+            }
+            else
+            {
+                LocalPipe
+                    .SendMsg(
+                        StateHelper.CreateMsg(
+                            $"{ep.Step}-{ep.StepBeforeOrAfter}-{ep.ExecInLocalOrServer}-{ep.FileName}  {ep.Argumnets} 失败 {output}！"
+                        )
+                    )
+                    .Wait();
+                throw new Exception("错误,信息参考上一条消息！");
+            }
+        }
     }
 
     /// <summary>
@@ -103,7 +178,7 @@ public class LocalSyncServer
     public readonly AbsPipeLine LocalPipe;
 
     /// <summary>
-    ///  local server 和 remote server 的连接，它有加密 
+    ///  local server 和 remote server 的连接，它有加密
     /// </summary>
     public readonly AbsPipeLine RemotePipe;
 

@@ -40,7 +40,7 @@ public abstract class StateHelpBase(
         var syncMsg =
             JsonSerializer.Deserialize<SyncMsg>(msg)
             ?? throw new NullReferenceException("msg is null");
-        if (syncMsg.Step != Step)
+        if (syncMsg.Step != Step && syncMsg.Step != SyncProcessStep.Close)
         {
             throw new Exception("Sync step error!");
         }
@@ -55,7 +55,7 @@ public abstract class StateHelpBase(
         var syncMsg =
             JsonSerializer.Deserialize<SyncMsg>(msg)
             ?? throw new NullReferenceException("msg is null");
-        if (syncMsg.Step != Step)
+        if (syncMsg.Step != Step && syncMsg.Step != SyncProcessStep.Close)
         {
             throw new Exception("Sync step error!");
         }
@@ -323,7 +323,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
                 // 不要log file 了
                 //+ $" /DiagnosticsFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.log"
                 + $" /p:ExtractAllTableData=false /p:VerifyExtraction=true /SourceServerName:{Context.NotNullSyncConfig.SrcDb.ServerName}"
-                + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatebaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
+                + $" /SourceDatabaseName:{Context.NotNullSyncConfig.SrcDb.DatabaseName} /SourceUser:{Context.NotNullSyncConfig.SrcDb.User}"
                 + $" /SourcePassword:{Context.NotNullSyncConfig.SrcDb.Password} /SourceTrustServerCertificate:{Context.NotNullSyncConfig.SrcDb.TrustServerCertificate}"
                 + $" /p:ExtractReferencedServerScopedElements=False /p:IgnoreUserLoginMappings=True /p:IgnorePermissions=True";
             if (Context.NotNullSyncConfig.SrcDb.SyncTablesData != null)
@@ -416,7 +416,7 @@ public class FinallyPublishHelper(LocalSyncServer context)
 {
     protected override void HandleLocalMsg(SyncMsg msg)
     {
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
     }
 
     /// <summary>
@@ -425,6 +425,18 @@ public class FinallyPublishHelper(LocalSyncServer context)
     /// <param name="msg"></param>
     protected override void HandleRemoteMsg(SyncMsg msg)
     {
+        if (msg.Body == "发布完成！")
+        {
+            Context.SetStateHelper(new NormalCloseHelper(Context));
+        }
         Context.LocalPipe.SendMsg(msg).Wait();
     }
+}
+
+public class NormalCloseHelper(LocalSyncServer context)
+    : StateHelpBase(context, SyncProcessStep.Close)
+{
+    protected override void HandleRemoteMsg(SyncMsg msg) { }
+
+    protected override void HandleLocalMsg(SyncMsg msg) { }
 }
