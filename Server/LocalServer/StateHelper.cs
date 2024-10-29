@@ -286,6 +286,11 @@ public class DiffFileAndPackHelper(LocalSyncServer context)
                     Context.NotNullSyncConfig.LocalRootPath
                 );
                 e.DiffDirInfo.WriteByThisInfo(PackOp);
+                Context
+                    .LocalPipe.SendMsg(
+                        CreateMsg(JsonSerializer.Serialize(e.DiffDirInfo), SyncMsgType.DirFileDiff)
+                    )
+                    .Wait();
             }
         });
         Context.LocalPipe.SendMsg(CreateMsg("文件差异比较成功！")).Wait();
@@ -318,6 +323,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
         }
         else
         {
+            Context.LocalPipe.SendMsg(CreateMsg("正在打包数据库...")).Wait();
             var arguments =
                 $" /Action:Extract /TargetFile:{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id.ToString()}/{Context.NotNullSyncConfig.Id.ToString()}.dacpac"
                 // 不要log file 了
@@ -387,7 +393,7 @@ public class UploadPackedHelper(LocalSyncServer context)
                 $"{LocalSyncServer.TempRootFile}/{Context.NotNullSyncConfig.Id}.zip",
                 (double current) =>
                 {
-                    //这里可能需要降低获取上传进度的频率
+                    // 每上传1Mb 更新一下进度
                     Context
                         .LocalPipe.SendMsg(CreateMsg(current.ToString(), SyncMsgType.Process))
                         .Wait();

@@ -4,8 +4,12 @@ public enum SyncMsgType
 {
     Error = 0,
     General = 1,
+
+    //进度消息
     Process = 2,
-    // DirFilePack = 3
+
+    //文件展示消息
+    DirFileDiff = 3
 }
 
 public enum SyncProcessStep
