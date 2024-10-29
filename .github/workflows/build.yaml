@@ -45,7 +45,7 @@ jobs:
         Write-Host "VERSION=$version" >> $env:GITHUB_ENV
     - name: Release
       uses: softprops/action-gh-release@v2
-      if: startsWith(github.ref, 'refs/tags/')     
+      if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
           FS_win_dotnet8.zip
