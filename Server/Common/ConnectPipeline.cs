@@ -103,8 +103,8 @@ public class WebSocPipeLine<TSocket>(TSocket socket, bool isAES) : AbsPipeLine(i
 
     protected override async Task Listen(Func<byte[], bool> receiveCb)
     {
-        //warning 最大支持1MB，这由需要同步的文件数量大小决定 UTF-8 每个字符，汉字视为4个字节，数字1个 ，英文字母2个。1MB=256KB*4，25万个字符能描述就行
-        var buffer = new byte[1024 * 1024];
+        //warning 最大支持10MB，这由需要同步的文件数量大小决定 UTF-8 每个字符，汉字视为4个字节，数字1个 ，英文字母2个。1MB=256KB*4，25万个字符能描述就行
+        var buffer = new byte[10 * 1024 * 1024];
 
         while (Socket.State == WebSocketState.Open)
         {

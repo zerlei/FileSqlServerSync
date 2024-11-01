@@ -6,8 +6,8 @@ class ConnectPipe {
     // this.#websocket = new WebSocket(`ws://${window.location.host}`)
   }
   OpenPipe(config, MsgCb) {
-    // var webSocUrl = `ws://${window.location.host}/websoc?Name=${config.Name}`
-    var webSocUrl = "ws://127.0.0.1:6818/websoc?Name=Test";
+    var webSocUrl = `ws://${window.location.host}/websoc?Name=${config.Name}`
+    // var webSocUrl = "ws://127.0.0.1:6818/websoc?Name=Test";
     this.#websocket = new WebSocket(webSocUrl);
     this.#websocket.onopen = (event) => {
       var starter = {
