@@ -4,7 +4,7 @@ import WebSocket from "ws";
 //#region  ############################## 配置文件 ###################################
 
 const LocalHost = "127.0.0.1";
-const config = {
+let config = {
   //发布的名称，每个项目具有唯一的一个名称
   Name: "Test",
   RemotePwd: "t123",
@@ -73,6 +73,52 @@ const config = {
   //   }
   //  ]
 };
+
+config = {
+  Name: "FYMF",
+  RemoteUrl: "212.129.223.183:6819",
+  RemotePwd: "FYMF",
+  IsDeployDb: false,
+  IsDeployProject: false,
+  LocalProjectAbsolutePath: "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
+  LocalRootPath: "D:/FileSyncTest/src",
+  RemoteRootPath: "E:/HMES_H7_HNFY_PREON",
+  SrcDb: {
+    ServerName: "172.16.12.2",
+    DatabaseName: "HMES_H7_HNFYMF",
+    User: "hmes-h7",
+    Password: "Hmes-h7666",
+    TrustServerCertificate: "True",
+    SyncTablesData: [
+      "dbo.sys_Button",
+      "dbo.sys_Menu",
+      "dbo.sys_Module",
+      "dbo.sys_Page",
+      "dbo.CommonPara"
+    ]
+  },
+  DstDb: {
+    ServerName: "172.16.80.1",
+    DatabaseName: "HMES_H7_HNFYMF_PRE",
+    User: "hnfypre",
+    Password: "pre0823",
+    TrustServerCertificate: "True"
+  },
+  DirFileConfigs: [
+    {
+      DirPath: "/",
+      Excludes: [
+        "Web.config",
+        "Log",
+        "Content",
+        "fonts"
+      ]
+    }
+  ],
+  ExecProcesses: []
+}
+
+
 //#endregion
 
 //#region  ############################## 打印函数 ###################################
@@ -129,13 +175,13 @@ function PrintProcessLine(str) {
 function getOpEmoj(Op) {
   switch (Op) {
     case 0:
-      return "➕";
+      return "A";
     case 1:
-      return "Ⓜ️";
+      return "M";
     case 2:
-      return "❌";
+      return "D";
     default:
-      return "🚀";
+      return "DIR";
   }
 }
 let ws = null;
@@ -150,11 +196,18 @@ function MsgCb(MsgIt) {
       }
     } else if (MsgIt.Type == 3) {
       var it = JSON.parse(MsgIt.Body);
-      it.Children.forEach((e) => {
+      const f = (item) => {
         PrintSuccessInNewLine(
-          `(${MsgIt.Step}/6) [${getOpEmoj(e.NextOp)}] ${e.FormatedPath}`
+          `(${MsgIt.Step}/6) [${getOpEmoj(item.NextOp)}] ${item.FormatedPath}`
         );
-      });
+        if (item.Children) {
+          item.Children.forEach((e) => {
+            f(e)
+          });
+  
+        }
+      }
+      f(it)
     } else {
       PrintSuccessInNewLine(`(${MsgIt.Step}/6) ${MsgIt.Body}`);
     }

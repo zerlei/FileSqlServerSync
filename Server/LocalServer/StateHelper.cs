@@ -146,6 +146,7 @@ public class DeployHelper(LocalSyncServer context)
                 ProcessStartInfo startbuildInfo =
                     new()
                     {
+                        //p:DeployOnBuild=true
                         FileName = LocalSyncServer.MSBuildAbPath, // The command to execute (can be any command line tool)
                         Arguments =
                             $" {Context.NotNullSyncConfig.LocalProjectAbsolutePath} /t:ResolveReferences"
