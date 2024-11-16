@@ -96,7 +96,7 @@ function getOpEmoj(Op) {
     case 2:
       return "❌";
     default:
-      return "🚀";
+      return "📁";
   }
 }
 function publishCB(MsgIt) {
@@ -105,14 +105,26 @@ function publishCB(MsgIt) {
     Msgs.value[Msgs.value.length - 1] = MsgIt
   } else if (MsgIt.Type == 3) {
     var it = JSON.parse(MsgIt.Body);
-    it.Children.forEach((e) => {
+    /**
+     * This function appears to be intended for processing children elements, though the current implementation is incomplete.
+     * 
+     * @param {Array} children - The array of child elements to be processed.
+     * @returns {void}
+     */
+    const f = (item) => {
       Msgs.value.push({
         Step: MsgIt.Step,
         Type: MsgIt.Type,
-        Body: `[${getOpEmoj(e.NextOp)}] ${e.FormatedPath}`
+        Body: `[${getOpEmoj(item.NextOp)}] ${item.FormatedPath}`
       })
+      if (item.Children) {
+        item.Children.forEach((e) => {
+          f(e)
+        });
 
-    });
+      }
+    }
+    f(it)
   }
   else {
     Msgs.value.push(MsgIt)
