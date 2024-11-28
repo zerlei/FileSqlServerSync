@@ -270,9 +270,12 @@ async function connectWebSocket() {
     // }
     // PrintSuccessInNewLine("11")
     await connectWebSocket();
+    if (!IsSuccess) {
+      throw new Error("发布失败");
+    }
     // console.log('WebSocket has closed');
     // The script will wait here until the WebSocket connection is closed
   } catch (err) {
-    console.error("Failed to connect or an error occurred:", err);
+    throw new Error(err);
   }
 })();
