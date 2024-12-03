@@ -7,20 +7,7 @@
 - 开发(或测试)sql server 和生产 sql server 结构和特定表数据的同步 使用[sqlpackage](https://learn.microsoft.com/zh-cn/sql/tools/sqlpackage/sqlpackage?view=sql-server-ver16)
 
 它的结构：
-> [!NOTE]
-> Highlights information that users should take into account, even when skimming.
 
-> [!TIP]
-> Optional information to help a user be more successful.
-
-> [!IMPORTANT]
-> Crucial information necessary for users to succeed.
-
-> [!WARNING]
-> Critical content demanding immediate user attention due to potential risks.
-
-> [!CAUTION]
-> Negative potential consequences of an action.
 ```mermaid
 flowchart TD
 ConfigClient <---->|websocket 信息交换| LocalServer
@@ -181,15 +168,15 @@ ddb[(开发/测试数据库)]
 > 
 > ```js 
 > {
-?  //源文件目录地址，是要发布的文件根目录，它是绝对路径，!执行发布时将发布到这个目录!
-> LocalRootPath: "D:/FileSyncTest/src",
+>   //源文件目录地址，是要发布的文件根目录，它是绝对路径，!执行发布时将发布到这个目录!
+>   LocalRootPath: "D:/FileSyncTest/src",
 > }
 > ```
- 此后若此文件保持不变，就不要额外在手动复制了，所以需要手动复制一次。
-
-- 使用 msdeploy.exe 在msbuild.exe构建之后打包，这是visual studio 的发布方式。这个需要更多配置，而且慢。
-
-现在这个项目使用第一种方式。
+> 此后若此文件保持不变，就不要额外在手动复制了，所以需要手动复制一次。
+> 
+> - 使用 msdeploy.exe 在msbuild.exe构建之后打包，这是visual studio 的发布方式。这个需要更多配置，而且慢。
+> 
+> 现在这个项目使用第一种方式。
 
 :::
 
@@ -341,16 +328,15 @@ config = {
 ```
 ## 3 使用流程和典型的使用场景
 
-::: warning
+> [!IMPORTANT]
+> 
+> 网络联通是必要的使用条件，不然咋传数据。
+> 
+> localserver 和 remoteserver 若处于不同的局域网中，可以借助公网传递数据。
+> 
+> 1. 使用 frp 做端口转发、内网穿透。需要公网IP。
+> 2. 使用 cloudflare 做内网穿透，不需要公网ip,但需要域名。
 
-网络联通是必要的使用条件，不然咋传数据。
-
-localserver 和 remoteserver 若处于不同的局域网中，可以借助公网传递数据。
-
-1. 使用 frp 做端口转发、内网穿透。需要公网IP。
-2. 使用 cloudflare 做内网穿透，不需要公网ip,但需要域名。
-
-:::
 
 
 当配置完成之后，
