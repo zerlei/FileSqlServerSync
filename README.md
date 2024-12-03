@@ -60,9 +60,8 @@ ddb[(开发/测试数据库)]
 4. (可选) nssm，将程序注册为 windows 服务
 
 > [!TIP]
-
 > 不使用 IIS 托管的理由:
-
+>
 > 1. 托管最新的.net 程序而不是 .net framework 需要安装额外的插件
 > 2. 无论是 LocalServer 还是 RemoteServer 都使用 websocket，IIS 在使用 websocket 受限
 > 3. LocalServer 和 RemoteServer 都需要开启额外的进程，这可能与 IIS 的进程管理冲突
