@@ -366,3 +366,20 @@ git 有hook，例如，可以配置每次合并到 master 分支并推送时自�
 
 1. 文件对比操作，它实现了文件目录结构的对比，写入。
 2. 同步步骤pipeline，它实现了数据传递，以及控制发布流程
+
+## 5 常见问题排查
+
+### 5.1 数据库同步失败
+
+数据库同步的原理是：
+
+1. 使用sqlpackage 提取发布数据库的信息，包含数据结构和特定表的数据，这一步骤会生成一个文件
+2. 文件同步服务，将步骤(1)生成的文件上传到服务器上
+3. 使用sqlpackage 将步骤(1) 生成的文件同步到生产数据库。
+
+错误一般发生在步骤(3)，这个能是因为一些不安全的数据结构同步导致，例如改了一个字段的名称，或者删除一个字段。此时需要手动同步，也就是手动取更改表结构或者借助navicat 等工具。
+
+`使用此命令手动同步，可以帮助排查问题。`
+```
+SqlPackage /Action:Publish  /SourceFile:./test.dacpac  /TargetServerName:127.0.0.1 /TargetDatabaseName:HMES_H7_HNFYMF /TargetUser:sa /TargetPassword:0 /TargetTrustServerCertificate:True 
+```
