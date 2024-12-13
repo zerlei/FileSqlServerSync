@@ -167,7 +167,7 @@ public class FinallyPublishHelper(RemoteSyncServer context)
             ProcessStartInfo startInfo =
                 new()
                 {
-                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    // StandardOutputEncoding = System.Text.Encoding.UTF8,
                     Arguments = arguments,
                     FileName = RemoteSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
                     // The arguments to pass to the command (e.g., list directory contents)
