@@ -111,7 +111,7 @@ ddb[(开发/测试数据库)]
 
 **Start directory**: RemoteServer.exe 所在目录
 
-**Arguments**: -urls="http://0.0.0.0:6818" 指定监听的 ip(所有)和端口
+**Arguments**: --urls="http://0.0.0.0:6818" 指定监听的 ip(所有)和端口
 
 **Service Name**: 服务名称
 
