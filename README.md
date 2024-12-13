@@ -90,7 +90,9 @@ ddb[(开发/测试数据库)]
 ```
 
 获取 sqlpackage 的绝对路径(powershell)。
-
+> [!NOTE]
+> sqlpackage 有两种安装方式，通过 dotnet tool 安装需要获取sqlpackage路径。下载独立可运行的sqlpackage，它的目录就是解压目录
+> 
 ```powershell
  (get-command sqlpackage).Source
 ```
