@@ -346,7 +346,7 @@ public class DeployMSSqlHelper(LocalSyncServer context)
                 {
                     FileName = LocalSyncServer.SqlPackageAbPath, // The command to execute (can be any command line tool)
                     Arguments = arguments,
-                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    // StandardOutputEncoding = System.Text.Encoding.UTF8,
                     // The arguments to pass to the command (e.g., list directory contents)
                     RedirectStandardOutput = true, // Redirect the standard output to a string
                     UseShellExecute = false, // Do not use the shell to execute the command
