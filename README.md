@@ -115,7 +115,7 @@ ddb[(开发/测试数据库)]
 
 **Service Name**: 服务名称
 
-![alt text](image.png)
+![alt text](https://cloud.zerlei.cn/f/YPCQ/image.png)
 
 点击 Install service
 
