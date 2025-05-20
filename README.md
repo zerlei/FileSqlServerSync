@@ -82,7 +82,7 @@ ddb[(开发/测试数据库)]
  // 发布的程序名称和密码 ['名称','密码']
   "NamePwds": [
     [ "Test", "t123" ],
-    [ "FYMF", "FYMF" ]
+    [ "XXXX", "XXXX" ]
   ],
   // 安装的sqlpackage 的绝对路径
   "SqlPackageAbPath": "C:\\Users\\ZHAOLEI\\.dotnet\\tools\\sqlpackage.exe"
@@ -217,7 +217,7 @@ config = {
   IsDeployProject: true,
   //项目地址
   LocalProjectAbsolutePath:
-    "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
+    "D:/git/XXXXXXXXXXXX/XXXXXXXXXXXXMF/XXXXXXXXXXXXMF.WEB",
   //源文件目录地址，是要发布的文件根目录，它是绝对路径，!执行发布时将发布到这个目录!
   LocalRootPath: "D:/FileSyncTest/src",
   //目标文件目录地址，也就是部署服务的机器上的项目文件根目录，它是绝对路径
@@ -227,9 +227,9 @@ config = {
     //Host
     ServerName: "172.16.12.2",
     //数据库名
-    DatabaseName: "HMES_H7_HNFYMF",
-    User: "hmes-h7",
-    Password: "Hmes-h7666",
+    DatabaseName: "XXXXXXXXXXXXXXX",
+    User: "xxxxxxx",
+    Password: "xxxxxxx666",
     //是否信任服务器证书
     TrustServerCertificate: "True",
     //同步的数据，这些数据将会同步
@@ -243,7 +243,7 @@ config = {
   //目标数据库配置 sqlserver
   DstDb: {
     ServerName: "127.0.0.1",
-    DatabaseName: "HMES_H7_HNFYMF",
+    DatabaseName: "XXXXXXXXXXXXXXX",
     User: "sa",
     Password: "0",
     TrustServerCertificate: "True",
@@ -283,19 +283,19 @@ config = {
 ```js
 
 config = {
-  Name: "FYMF",
+  Name: "XXXX",
   RemoteUrl: "212.129.223.183:6819",
-  RemotePwd: "FYMF",
+  RemotePwd: "XXXX",
   IsDeployDb: false,
   IsDeployProject: true,
-  LocalProjectAbsolutePath: "D:/git/HMES-H7-HNFY/HMES-H7-HNFYMF/HMES-H7-HNFYMF.WEB",
+  LocalProjectAbsolutePath: "D:/git/XXXXXXXXXXXX/XXXXXXXXXXXXMF/XXXXXXXXXXXXMF.WEB",
   LocalRootPath: "D:/FileSyncTest/src",
-  RemoteRootPath: "E:/HMES_H7_HNFY_PREON",
+  RemoteRootPath: "E:/XXXXXXXXXXXXX_PREON",
   SrcDb: {
     ServerName: "172.16.12.2",
-    DatabaseName: "HMES_H7_HNFYMF",
-    User: "hmes-h7",
-    Password: "Hmes-h7666",
+    DatabaseName: "XXXXXXXXXXXXXXX",
+    User: "xxxxxxx",
+    Password: "xxxxxxx666",
     TrustServerCertificate: "True",
     SyncTablesData: [
       "dbo.sys_Button",
@@ -307,9 +307,9 @@ config = {
   },
   DstDb: {
     ServerName: "172.16.80.1",
-    DatabaseName: "HMES_H7_HNFYMF_PRE",
-    User: "hnfypre",
-    Password: "pre0823",
+    DatabaseName: "XXXXXXXXXXXXXXX_PRE",
+    User: "xxxxxxx",
+    Password: "xxxxxxx",
     TrustServerCertificate: "True"
   },
   DirFileConfigs: [
@@ -383,5 +383,5 @@ git 有hook，例如，可以配置每次合并到 master 分支并推送时自�
 
 `使用此命令手动同步，可以帮助排查问题。`
 ```
-SqlPackage /Action:Publish  /SourceFile:./test.dacpac  /TargetServerName:127.0.0.1 /TargetDatabaseName:HMES_H7_HNFYMF /TargetUser:sa /TargetPassword:0 /TargetTrustServerCertificate:True 
+SqlPackage /Action:Publish  /SourceFile:./test.dacpac  /TargetServerName:127.0.0.1 /TargetDatabaseName:XXXXXXXXXXXXXXX /TargetUser:sa /TargetPassword:0 /TargetTrustServerCertificate:True 
 ```
